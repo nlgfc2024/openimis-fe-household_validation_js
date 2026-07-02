@@ -7,12 +7,13 @@
 
   "filter.location": "Location",
   "filter.microCatchment": "Micro-Catchment",
+  "filter.microCatchment.any": "Any",
+  "filter.lastVerifiedDate": "Last Verified Date",
   "filter.hotspot": "Hotspot Area",
   "filter.hotspot.any": "Any",
-  "filter.femaleHeadedPctMin": "Min % Female-Headed HH",
-  "filter.femaleHeadedPctMax": "Max % Female-Headed HH",
-  "filter.youthPctMin": "Min % Youth",
-  "filter.youthPctMax": "Max % Youth",
+  "filter.femaleHeadedPct": "Percentage of Female-Headed Household",
+  "filter.youthPct": "Percentage of Youths",
+  "filter.reservedPct": "Percentage of Reserved",
 
   "member.firstName": "First Name",
   "member.lastName": "Last Name",

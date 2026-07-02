@@ -25,3 +25,17 @@ export const HOTSPOT_OPTIONS = [
   'Nkhotakota Wildlife Corridor',
   'Mwanza Flood Plain',
 ];
+
+// Micro-catchment areas — stub list pending official micro-catchment registry
+export const MICRO_CATCHMENT_OPTIONS = [
+  'Mvera Cluster',
+  'Linthipe Basin',
+  'Mpira Escarpment',
+  'Neno Valley North',
+  'Makanjira Belt',
+  'Kasungu Ridge',
+  'Nkhatabay South Shore',
+  'Chingale Plains',
+  'Mponela East Block',
+  'Zomba Peri-Urban Ring',
+];
