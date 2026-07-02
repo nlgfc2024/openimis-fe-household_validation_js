@@ -7,9 +7,8 @@
 
   "filter.location": "Location",
   "filter.microCatchment": "Micro-Catchment",
-  "filter.hotspot": "Hotspot",
-  "filter.hotspot.true": "Yes",
-  "filter.hotspot.false": "No",
+  "filter.hotspot": "Hotspot Area",
+  "filter.hotspot.any": "Any",
   "filter.femaleHeadedPctMin": "Min % Female-Headed HH",
   "filter.femaleHeadedPctMax": "Max % Female-Headed HH",
   "filter.youthPctMin": "Min % Youth",
