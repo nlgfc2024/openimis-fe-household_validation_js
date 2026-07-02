@@ -14,7 +14,7 @@ import {
   RIGHT_HOUSEHOLD_VALIDATION_SEARCH,
 } from './constants';
 
-const ROUTE_GENERATE_VALIDATION_LIST = 'household-validation/generate';
+const ROUTE_GENERATE_VALIDATION_LIST = 'household-validation';
 
 const DEFAULT_CONFIG = {
   translations: [{ key: 'en', messages: flatten(messages_en) }],
