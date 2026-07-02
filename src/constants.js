@@ -2,8 +2,8 @@ export const HOUSEHOLD_VALIDATION_MODULE_NAME = 'householdValidation';
 export const HOUSEHOLD_VALIDATION_MAIN_MENU_CONTRIBUTION_KEY = 'householdValidation.MainMenu';
 
 // Rights
-export const RIGHT_HOUSEHOLD_VALIDATION_SEARCH = 954001;
-export const RIGHT_HOUSEHOLD_VALIDATION_GENERATE = 954002;
+export const RIGHT_HOUSEHOLD_VALIDATION_SEARCH = 953001;
+export const RIGHT_HOUSEHOLD_VALIDATION_GENERATE = 953002;
 
 // Search / Pagination
 export const DEFAULT_PAGE_SIZE = 10;
