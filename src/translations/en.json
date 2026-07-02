@@ -1,0 +1,39 @@
+{
+  "menu.generateValidationList": "Generate Validation List",
+
+  "generateValidationList.pageTitle": "Generate Validation List",
+  "generateValidationList.helmetTitle": "Household Validation - Generate List",
+  "generateValidationList.searcherResultsTitle": "Household Members ({count})",
+
+  "filter.location": "Location",
+  "filter.microCatchment": "Micro-Catchment",
+  "filter.hotspot": "Hotspot",
+  "filter.hotspot.true": "Yes",
+  "filter.hotspot.false": "No",
+  "filter.femaleHeadedPctMin": "Min % Female-Headed HH",
+  "filter.femaleHeadedPctMax": "Max % Female-Headed HH",
+  "filter.youthPctMin": "Min % Youth",
+  "filter.youthPctMax": "Max % Youth",
+
+  "member.firstName": "First Name",
+  "member.lastName": "Last Name",
+  "member.dob": "Date of Birth",
+  "member.microCatchment": "Micro-Catchment",
+  "member.hotspot": "Hotspot",
+  "member.village": "Village",
+  "member.prospectiveProjects": "Prospective Projects",
+  "member.validationStatus": "Validation Status",
+
+  "dialog.close": "Close",
+
+  "export.label": "Export to Excel",
+  "export.filename": "household_validation_list",
+  "export.firstName": "First Name",
+  "export.lastName": "Last Name",
+  "export.dob": "Date of Birth",
+  "export.microCatchment": "Micro-Catchment",
+  "export.hotspot": "Hotspot",
+  "export.village": "Village",
+  "export.prospectiveProjects": "Prospective Projects",
+  "export.validationStatus": "Validation Status"
+}
