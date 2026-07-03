@@ -1,41 +1,48 @@
-import React from 'react';
-import { Helmet, withModulesManager, formatMessage } from '@openimis/fe-core';
-import { injectIntl } from 'react-intl';
-import { withTheme, withStyles } from '@material-ui/core/styles';
+import React, { useState } from 'react';
 import { connect } from 'react-redux';
+import {
+  Form,
+  useHistory,
+  useModulesManager,
+  useTranslations,
+} from '@openimis/fe-core';
 import {
   RIGHT_HOUSEHOLD_VALIDATION_SEARCH,
   HOUSEHOLD_VALIDATION_MODULE_NAME,
 } from '../constants';
-import ValidationListSearcher from '../components/ValidationListSearcher';
+import HouseholdValidationHeadPanel from '../components/HouseholdValidationHeadPanel';
 
-const styles = (theme) => ({
-  page: theme.page,
-});
+function HouseholdValidationPage({ rights }) {
+  const modulesManager = useModulesManager();
+  const history = useHistory();
+  const { formatMessage } = useTranslations(HOUSEHOLD_VALIDATION_MODULE_NAME, modulesManager);
 
-function HouseholdValidationPage(props) {
-  const { intl, classes, rights } = props;
+  const [filters, setFilters] = useState({});
+
+  const back = () => history.goBack();
 
   return (
     rights.includes(RIGHT_HOUSEHOLD_VALIDATION_SEARCH) && (
-      <div className={classes.page}>
-        <Helmet title={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'generateValidationList.helmetTitle')} />
-        <ValidationListSearcher rights={rights} />
-      </div>
+      <Form
+        module={HOUSEHOLD_VALIDATION_MODULE_NAME}
+        title="generateValidationList.pageTitle"
+        back={back}
+        edited={filters}
+        onEditedChanged={setFilters}
+        HeadPanel={HouseholdValidationHeadPanel}
+        rights={rights}
+        actions={[]}
+        canSave={() => false}
+        save={null}
+        mandatoryFieldsEmpty={null}
+      />
     )
   );
 }
 
 const mapStateToProps = (state) => ({
-  rights: !!state.core && !!state.core.user && !!state.core.user.i_user ? state.core.user.i_user.rights : [],
+  rights: state.core?.user?.i_user?.rights ?? [],
 });
 
-export default withModulesManager(
-  injectIntl(
-    withTheme(
-      withStyles(styles)(
-        connect(mapStateToProps)(HouseholdValidationPage),
-      ),
-    ),
-  ),
-);
+export default connect(mapStateToProps)(HouseholdValidationPage);
+
