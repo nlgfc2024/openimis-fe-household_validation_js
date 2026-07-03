@@ -80,9 +80,7 @@ function HouseholdValidationHeadPanel({
   }, [generatedValidationLists, fetchedValidationSummary, edited, fetchHouseholdValidationSummary]);
 
   const exportToCSV = () => {
-    if (!validationListResult?.file_base64) return;
-
-    const byteCharacters = atob(validationListResult.file_base64);
+    const byteCharacters = atob(validationListResult.fileBase64);
     const byteNumbers = new Array(byteCharacters.length);
     for (let i = 0; i < byteCharacters.length; i++) {
       byteNumbers[i] = byteCharacters.charCodeAt(i);
