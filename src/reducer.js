@@ -11,33 +11,45 @@ import {
 } from './util/action-type';
 
 export const ACTION_TYPE = {
-  // Household members list (generate validation list)
-  GENERATE_VALIDATION_LIST: 'GENERATE_VALIDATION_LIST'
+  // Generate validation list mutation
+  GENERATE_VALIDATION_LIST: 'GENERATE_VALIDATION_LIST',
+  // Fetch validation summary query
+  FETCH_VALIDATION_SUMMARY: 'FETCH_VALIDATION_SUMMARY',
+  // Fetch validation preview query
+  FETCH_VALIDATION_PREVIEW: 'FETCH_VALIDATION_PREVIEW',
 };
 
 const INITIAL_STATE = {
-  // Household members list
+  // Generate validation list
   generatingValidationLists: false,
   generatedValidationLists: false,
   validationListResult: {},
-  validationListsPageInfo: {},
-  validationListsTotalCount: 0,
   errorValidationLists: null,
+
+  // Validation summary
+  fetchingValidationSummary: false,
+  fetchedValidationSummary: false,
+  validationSummary: {},
+  errorValidationSummary: null,
+
+  // Validation preview
+  fetchingValidationPreview: false,
+  fetchedValidationPreview: false,
+  validationPreviewData: [],
+  validationPreviewPageInfo: {},
+  validationPreviewTotalCount: 0,
+  errorValidationPreview: null,
 };
 
 function reducer(state = INITIAL_STATE, action) {
   switch (action.type) {
-    // -------------------------
-    // Fetch household members
-    // -------------------------
+    // -------- GENERATE VALIDATION LIST MUTATION --------
     case REQUEST(ACTION_TYPE.GENERATE_VALIDATION_LIST):
       return {
         ...state,
         generatingValidationLists: true,
         generatedValidationLists: false,
         validationListResult: {},
-        validationListsPageInfo: {},
-        validationListsTotalCount: 0,
         errorValidationLists: null,
       };
 
@@ -46,28 +58,101 @@ function reducer(state = INITIAL_STATE, action) {
         ...state,
         generatingValidationLists: false,
         generatedValidationLists: true,
-        validationListResult: action.payload.data?.householdMember ?? {},
-        validationListsPageInfo: pageInfo(action.payload.data?.householdMember),
-        validationListsTotalCount: action.payload.data?.householdMember?.totalCount ?? 0,
+        validationListResult: action.payload.data?.generateHouseholdValidationList ?? {},
         errorValidationLists: formatGraphQLError(action.payload),
       };
 
     case ERROR(ACTION_TYPE.GENERATE_VALIDATION_LIST):
       return {
         ...state,
-        fetchingHouseholdMembers: false,
+        generatingValidationLists: false,
         errorValidationLists: formatServerError(action.payload),
       };
 
     case CLEAR(ACTION_TYPE.GENERATE_VALIDATION_LIST):
       return {
         ...state,
-        fetchingHouseholdMembers: false,
+        generatingValidationLists: false,
         generatedValidationLists: false,
-        householdMembers: [],
-        validationListsPageInfo: {},
-        validationListsTotalCount: 0,
+        validationListResult: {},
         errorValidationLists: null,
+      };
+
+    // -------- FETCH VALIDATION SUMMARY QUERY --------
+    case REQUEST(ACTION_TYPE.FETCH_VALIDATION_SUMMARY):
+      return {
+        ...state,
+        fetchingValidationSummary: true,
+        fetchedValidationSummary: false,
+        validationSummary: {},
+        errorValidationSummary: null,
+      };
+
+    case SUCCESS(ACTION_TYPE.FETCH_VALIDATION_SUMMARY):
+      return {
+        ...state,
+        fetchingValidationSummary: false,
+        fetchedValidationSummary: true,
+        validationSummary: action.payload.data?.householdValidationSummary ?? {},
+        errorValidationSummary: formatGraphQLError(action.payload),
+      };
+
+    case ERROR(ACTION_TYPE.FETCH_VALIDATION_SUMMARY):
+      return {
+        ...state,
+        fetchingValidationSummary: false,
+        errorValidationSummary: formatServerError(action.payload),
+      };
+
+    case CLEAR(ACTION_TYPE.FETCH_VALIDATION_SUMMARY):
+      return {
+        ...state,
+        fetchingValidationSummary: false,
+        fetchedValidationSummary: false,
+        validationSummary: {},
+        errorValidationSummary: null,
+      };
+
+    // -------- FETCH VALIDATION PREVIEW QUERY --------
+    case REQUEST(ACTION_TYPE.FETCH_VALIDATION_PREVIEW):
+      return {
+        ...state,
+        fetchingValidationPreview: true,
+        fetchedValidationPreview: false,
+        validationPreviewData: [],
+        validationPreviewPageInfo: {},
+        validationPreviewTotalCount: 0,
+        errorValidationPreview: null,
+      };
+
+    case SUCCESS(ACTION_TYPE.FETCH_VALIDATION_PREVIEW):
+      const previewData = action.payload.data?.householdValidationPreview;
+      return {
+        ...state,
+        fetchingValidationPreview: false,
+        fetchedValidationPreview: true,
+        validationPreviewData: previewData?.edges?.map((e) => e.node) ?? [],
+        validationPreviewPageInfo: previewData?.page_info ?? {},
+        validationPreviewTotalCount: previewData?.total_count ?? 0,
+        errorValidationPreview: formatGraphQLError(action.payload),
+      };
+
+    case ERROR(ACTION_TYPE.FETCH_VALIDATION_PREVIEW):
+      return {
+        ...state,
+        fetchingValidationPreview: false,
+        errorValidationPreview: formatServerError(action.payload),
+      };
+
+    case CLEAR(ACTION_TYPE.FETCH_VALIDATION_PREVIEW):
+      return {
+        ...state,
+        fetchingValidationPreview: false,
+        fetchedValidationPreview: false,
+        validationPreviewData: [],
+        validationPreviewPageInfo: {},
+        validationPreviewTotalCount: 0,
+        errorValidationPreview: null,
       };
 
     default:

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { injectIntl } from 'react-intl';
 import {
   Button,
@@ -8,11 +8,31 @@ import {
   DialogTitle,
 } from '@material-ui/core';
 import { formatMessage, withModulesManager } from '@openimis/fe-core';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 import { HOUSEHOLD_VALIDATION_MODULE_NAME } from '../../constants';
+import { fetchHouseholdValidationPreview } from '../../actions';
 import ValidationListSearcher from '../ValidationListSearcher';
 
-function HouseholdPreviewDialog({ intl, open, onClose, validationListsResults }) {
+function HouseholdPreviewDialog({
+  intl,
+  open,
+  onClose,
+  // From redux
+  validationPreviewData,
+  validationPreviewTotalCount,
+  fetchingValidationPreview,
+  // Actions
+  fetchHouseholdValidationPreview,
+}) {
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
+
+  // Fetch preview data when dialog opens
+  useEffect(() => {
+    if (open && validationPreviewData.length === 0) {
+      fetchHouseholdValidationPreview({}, 10, 0);
+    }
+  }, [open, validationPreviewData.length, fetchHouseholdValidationPreview]);
 
   return (
     <Dialog
@@ -34,7 +54,7 @@ function HouseholdPreviewDialog({ intl, open, onClose, validationListsResults })
       </DialogTitle>
       <DialogContent>
         <div style={{ backgroundColor: '#DFEDEF' }}>
-          <ValidationListSearcher validationListsResults={validationListsResults} />
+          <ValidationListSearcher />
         </div>
       </DialogContent>
       <DialogActions
@@ -64,4 +84,18 @@ function HouseholdPreviewDialog({ intl, open, onClose, validationListsResults })
   );
 }
 
-export default withModulesManager(injectIntl(HouseholdPreviewDialog));
+const mapStateToProps = (state) => ({
+  validationPreviewData: state.householdValidation?.validationPreviewData ?? [],
+  validationPreviewTotalCount: state.householdValidation?.validationPreviewTotalCount ?? 0,
+  fetchingValidationPreview: state.householdValidation?.fetchingValidationPreview,
+});
+
+const mapDispatchToProps = (dispatch) => bindActionCreators({
+  fetchHouseholdValidationPreview,
+}, dispatch);
+
+export default withModulesManager(
+  injectIntl(
+    connect(mapStateToProps, mapDispatchToProps)(HouseholdPreviewDialog),
+  ),
+);

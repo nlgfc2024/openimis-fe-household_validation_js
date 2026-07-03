@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { injectIntl } from 'react-intl';
 import {
   Button,
@@ -11,7 +11,6 @@ import {
 import { withTheme, withStyles } from '@material-ui/core/styles';
 import {
   withModulesManager,
-  FormPanel,
   formatMessage,
 } from '@openimis/fe-core';
 import { connect } from 'react-redux';
@@ -19,7 +18,11 @@ import { bindActionCreators } from 'redux';
 import ValidationListFiltersPanel from './ValidationListFiltersPanel';
 import HouseholdPreviewDialog from './dialogs/HouseholdPreviewDialog';
 import { HOUSEHOLD_VALIDATION_MODULE_NAME } from '../constants';
-import { generateValidationList } from '../actions';
+import {
+  generateValidationList,
+  fetchHouseholdValidationSummary,
+  fetchHouseholdValidationPreview,
+} from '../actions';
 
 const styles = (theme) => ({
   item: theme.paper.item,
@@ -48,22 +51,38 @@ const styles = (theme) => ({
   },
 });
 
-function HouseholdValidationHeadPanel ({
-  intl, 
-  classes, 
-  validationListResults,
+function HouseholdValidationHeadPanel({
+  intl,
+  classes,
+  edited,
+  onEditedChanged,
+  // Generate mutation state
+  generatingValidationLists,
   generatedValidationLists,
+  validationListResult,
+  fetchedValidationPreview,
+  // Summary state
+  validationSummary,
+  fetchedValidationSummary,
+  // Actions
   generateValidationList,
+  fetchHouseholdValidationSummary,
+  fetchHouseholdValidationPreview,
 }) {
   const [showPreview, setShowPreview] = React.useState(false);
-  const [edited, setEdited] = React.useState({});
-
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
 
+  // Fetch summary after generation
+  useEffect(() => {
+    if (generatedValidationLists && !fetchedValidationSummary) {
+      fetchHouseholdValidationSummary(edited);
+    }
+  }, [generatedValidationLists, fetchedValidationSummary, edited, fetchHouseholdValidationSummary]);
+
   const exportToCSV = () => {
-    // The validationListResults contains file in base64 format, we need to convert it to a Blob and then create a download link
-    // It also contains a fileName, which we can use to name the downloaded file
-    const byteCharacters = atob(validationListResults?.file ?? '');
+    if (!validationListResult?.file_base64) return;
+
+    const byteCharacters = atob(validationListResult.file_base64);
     const byteNumbers = new Array(byteCharacters.length);
     for (let i = 0; i < byteCharacters.length; i++) {
       byteNumbers[i] = byteCharacters.charCodeAt(i);
@@ -73,16 +92,12 @@ function HouseholdValidationHeadPanel ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = validationListResults?.fileName ?? 'validation_list.csv';
+    link.download = validationListResult?.file_name ?? 'validation_list.csv';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
-
-  const onHandleGenerate = () => {
-    console.log('Generating validation list with filters:', edited);
-    generateValidationList(edited);
-  }
 
   return (
     <Grid container>
@@ -91,23 +106,29 @@ function HouseholdValidationHeadPanel ({
         <ValidationListFiltersPanel
           intl={intl}
           filters={edited}
-          onChangeFilters={setEdited}
+          onChangeFilters={onEditedChanged}
         />
       </Grid>
 
       {/* ── Generate button ── */}
       <Grid item xs={12} className={classes.item}>
-        <Button variant="contained" color="primary" onClick={onHandleGenerate}>
-          {fm('generateValidationList.generateButton')}
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => generateValidationList(edited)}
+          disabled={generatingValidationLists}
+        >
+          {generatingValidationLists
+            ? fm('generateValidationList.generatingButton')
+            : fm('generateValidationList.generateButton')}
         </Button>
       </Grid>
-
 
       {/* ── Validation List Results Summary (only after list generation) ── */}
       {generatedValidationLists && (
         <>
           <Grid item xs={12} className={classes.item}>
-              <Divider className={classes.divider} />
+            <Divider className={classes.divider} />
           </Grid>
           <Grid item xs={12}>
             <Typography className={classes.summaryLabel}>
@@ -122,11 +143,12 @@ function HouseholdValidationHeadPanel ({
                   {fm('generateValidationList.totalHouseholds')}
                 </Typography>
                 <Typography className={classes.cardNumber}>
-                  {validationListResults.totalHouseholds?.toLocaleString() ?? 0}
+                  {validationSummary?.totalHouseholds?.toLocaleString() ?? 0}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
+
           <Grid item xs={12} sm={6} md={4} className={classes.item}>
             <Card className={classes.card} variant="outlined">
               <CardContent>
@@ -134,11 +156,12 @@ function HouseholdValidationHeadPanel ({
                   {fm('generateValidationList.totalIndividuals')}
                 </Typography>
                 <Typography className={classes.cardNumber}>
-                  {validationListResults.totalIndividuals?.toLocaleString() ?? 0}
+                  {validationSummary?.totalIndividuals?.toLocaleString() ?? 0}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
+
           <Grid item xs={12} sm={6} md={4} className={classes.item}>
             <Card className={classes.card} variant="outlined">
               <CardContent>
@@ -146,11 +169,12 @@ function HouseholdValidationHeadPanel ({
                   {fm('generateValidationList.selectedHouseholds')}
                 </Typography>
                 <Typography className={classes.cardNumber}>
-                  {validationListResults.householdsSelected?.toLocaleString() ?? 0}
+                  {validationSummary?.selectedHouseholds?.toLocaleString() ?? 0}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
+
           <Grid item xs={12} sm={6} md={4} className={classes.item}>
             <Card className={classes.card} variant="outlined">
               <CardContent>
@@ -158,11 +182,12 @@ function HouseholdValidationHeadPanel ({
                   {fm('generateValidationList.selectedIndividuals')}
                 </Typography>
                 <Typography className={classes.cardNumber}>
-                  {validationListResults.memberRows?.toLocaleString() ?? 0}
+                  {validationSummary?.selectedIndividuals?.toLocaleString() ?? 0}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
+
           <Grid item xs={12} sm={6} md={4} className={classes.item}>
             <Card className={classes.card} variant="outlined">
               <CardContent>
@@ -170,11 +195,12 @@ function HouseholdValidationHeadPanel ({
                   {fm('generateValidationList.selectedFemaleHeaded')}
                 </Typography>
                 <Typography className={classes.cardNumber}>
-                  {validationListResults.selectedFemaleHeaded?.toLocaleString() ?? 0}
+                  {validationSummary?.selectedFemaleHeadedHouseholds?.toLocaleString() ?? 0}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
+
           <Grid item xs={12} sm={6} md={4} className={classes.item}>
             <Card className={classes.card} variant="outlined">
               <CardContent>
@@ -182,11 +208,12 @@ function HouseholdValidationHeadPanel ({
                   {fm('generateValidationList.selectedYouthHeaded')}
                 </Typography>
                 <Typography className={classes.cardNumber}>
-                  {validationListResults.selectedYouthHeaded?.toLocaleString() ?? 0}
+                  {validationSummary?.selectedYouthHouseholds?.toLocaleString() ?? 0}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
+
           <Grid item xs={12} sm={6} md={4} className={classes.item}>
             <Card className={classes.card} variant="outlined">
               <CardContent>
@@ -194,7 +221,7 @@ function HouseholdValidationHeadPanel ({
                   {fm('generateValidationList.selectedReserve')}
                 </Typography>
                 <Typography className={classes.cardNumber}>
-                  {validationListResults.selectedReserve?.toLocaleString() ?? 0}
+                  {validationSummary?.reserveHouseholds?.toLocaleString() ?? 0}
                 </Typography>
               </CardContent>
             </Card>
@@ -217,33 +244,37 @@ function HouseholdValidationHeadPanel ({
               variant="contained"
               color="primary"
               onClick={exportToCSV}
+              disabled={!validationListResult?.fileBase64}
             >
               {fm('export.label')}
             </Button>
           </div>
         </Grid>
-
       )}
-
-
 
       {/* ── Preview dialog ── */}
       <HouseholdPreviewDialog
         open={showPreview}
         onClose={() => setShowPreview(false)}
-        validationListsResults={validationListResults.selectedMembers ?? []}
       />
     </Grid>
   );
 }
 
 const mapStateToProps = (state) => ({
-  validationListResults: state.householdValidation?.validationListResult,
+  generatingValidationLists: state.householdValidation?.generatingValidationLists,
   generatedValidationLists: state.householdValidation?.generatedValidationLists,
+  validationListResult: state.householdValidation?.validationListResult ?? {},
+  validationSummary: state.householdValidation?.validationSummary ?? {},
+  fetchedValidationSummary: state.householdValidation?.fetchedValidationSummary,
+  validationPreviewData: state.householdValidation?.validationPreviewData ?? [],
+  fetchedValidationPreview: state.householdValidation?.fetchedValidationPreview,
 });
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
   generateValidationList,
+  fetchHouseholdValidationSummary,
+  fetchHouseholdValidationPreview,
 }, dispatch);
 
 export default withModulesManager(
