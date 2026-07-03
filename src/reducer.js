@@ -12,25 +12,17 @@ import {
 
 export const ACTION_TYPE = {
   // Household members list (generate validation list)
-  FETCH_HOUSEHOLD_MEMBERS: 'HOUSEHOLD_VALIDATION_FETCH_MEMBERS',
-  HOUSEHOLD_MEMBERS_EXPORT: 'HOUSEHOLD_VALIDATION_MEMBERS_EXPORT',
+  GENERATE_VALIDATION_LIST: 'GENERATE_VALIDATION_LIST'
 };
 
 const INITIAL_STATE = {
   // Household members list
-  fetchingHouseholdMembers: false,
-  fetchedHouseholdMembers: false,
-  householdMembers: [],
-  householdMembersPageInfo: {},
-  householdMembersTotalCount: 0,
-  errorHouseholdMembers: null,
-
-  // Export
-  fetchingHouseholdMembersExport: false,
-  fetchedHouseholdMembersExport: false,
-  householdMembersExport: null,
-  householdMembersExportPageInfo: {},
-  errorHouseholdMembersExport: null,
+  generatingValidationLists: false,
+  generatedValidationLists: false,
+  validationListResult: {},
+  validationListsPageInfo: {},
+  validationListsTotalCount: 0,
+  errorValidationLists: null,
 };
 
 function reducer(state = INITIAL_STATE, action) {
@@ -38,84 +30,44 @@ function reducer(state = INITIAL_STATE, action) {
     // -------------------------
     // Fetch household members
     // -------------------------
-    case REQUEST(ACTION_TYPE.FETCH_HOUSEHOLD_MEMBERS):
+    case REQUEST(ACTION_TYPE.GENERATE_VALIDATION_LIST):
       return {
         ...state,
-        fetchingHouseholdMembers: true,
-        fetchedHouseholdMembers: false,
+        generatingValidationLists: true,
+        generatedValidationLists: false,
+        validationListResult: {},
+        validationListsPageInfo: {},
+        validationListsTotalCount: 0,
+        errorValidationLists: null,
+      };
+
+    case SUCCESS(ACTION_TYPE.GENERATE_VALIDATION_LIST):
+      return {
+        ...state,
+        generatingValidationLists: false,
+        generatedValidationLists: true,
+        validationListResult: action.payload.data?.householdMember ?? {},
+        validationListsPageInfo: pageInfo(action.payload.data?.householdMember),
+        validationListsTotalCount: action.payload.data?.householdMember?.totalCount ?? 0,
+        errorValidationLists: formatGraphQLError(action.payload),
+      };
+
+    case ERROR(ACTION_TYPE.GENERATE_VALIDATION_LIST):
+      return {
+        ...state,
+        fetchingHouseholdMembers: false,
+        errorValidationLists: formatServerError(action.payload),
+      };
+
+    case CLEAR(ACTION_TYPE.GENERATE_VALIDATION_LIST):
+      return {
+        ...state,
+        fetchingHouseholdMembers: false,
+        generatedValidationLists: false,
         householdMembers: [],
-        householdMembersPageInfo: {},
-        householdMembersTotalCount: 0,
-        errorHouseholdMembers: null,
-      };
-
-    case SUCCESS(ACTION_TYPE.FETCH_HOUSEHOLD_MEMBERS):
-      return {
-        ...state,
-        fetchingHouseholdMembers: false,
-        fetchedHouseholdMembers: true,
-        householdMembers: action.payload.data?.householdMember?.edges?.map((e) => e.node) ?? [],
-        householdMembersPageInfo: pageInfo(action.payload.data?.householdMember),
-        householdMembersTotalCount: action.payload.data?.householdMember?.totalCount ?? 0,
-        errorHouseholdMembers: formatGraphQLError(action.payload),
-      };
-
-    case ERROR(ACTION_TYPE.FETCH_HOUSEHOLD_MEMBERS):
-      return {
-        ...state,
-        fetchingHouseholdMembers: false,
-        errorHouseholdMembers: formatServerError(action.payload),
-      };
-
-    case CLEAR(ACTION_TYPE.FETCH_HOUSEHOLD_MEMBERS):
-      return {
-        ...state,
-        fetchingHouseholdMembers: false,
-        fetchedHouseholdMembers: false,
-        householdMembers: [],
-        householdMembersPageInfo: {},
-        householdMembersTotalCount: 0,
-        errorHouseholdMembers: null,
-      };
-
-    // -------------------------
-    // Export household members
-    // -------------------------
-    case CLEAR(ACTION_TYPE.HOUSEHOLD_MEMBERS_EXPORT):
-      return {
-        ...state,
-        fetchingHouseholdMembersExport: false,
-        fetchedHouseholdMembersExport: false,
-        householdMembersExport: null,
-        householdMembersExportPageInfo: {},
-        errorHouseholdMembersExport: null,
-      };
-
-    case REQUEST(ACTION_TYPE.HOUSEHOLD_MEMBERS_EXPORT):
-      return {
-        ...state,
-        fetchingHouseholdMembersExport: true,
-        fetchedHouseholdMembersExport: false,
-        householdMembersExport: null,
-        householdMembersExportPageInfo: {},
-        errorHouseholdMembersExport: null,
-      };
-
-    case SUCCESS(ACTION_TYPE.HOUSEHOLD_MEMBERS_EXPORT):
-      return {
-        ...state,
-        fetchingHouseholdMembersExport: false,
-        fetchedHouseholdMembersExport: true,
-        householdMembersExport: action.payload.data.householdMemberExport,
-        householdMembersExportPageInfo: pageInfo(action.payload.data.householdMemberExport),
-        errorHouseholdMembersExport: formatGraphQLError(action.payload),
-      };
-
-    case ERROR(ACTION_TYPE.HOUSEHOLD_MEMBERS_EXPORT):
-      return {
-        ...state,
-        fetchingHouseholdMembersExport: false,
-        errorHouseholdMembersExport: formatServerError(action.payload),
+        validationListsPageInfo: {},
+        validationListsTotalCount: 0,
+        errorValidationLists: null,
       };
 
     default:
