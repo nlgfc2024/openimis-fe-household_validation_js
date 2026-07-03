@@ -12,41 +12,31 @@ import { CLEAR } from './util/action-type';
 // ---------------------
 
 const HOUSEHOLD_MEMBER_PROJECTION = () => [
-  'id',
-  'individual { firstName lastName dob location { name code parent { name code parent { name code parent { name code } } } } }',
-  'household { code microCatchment isHotspot prospectiveProjects validationStatus }',
-  'role',
+  'batch_id',
+  'file_name',
+  'file_base64',
+  'households_selected',
+  'reserve_households',
+  'members_roles'
 ];
 
 // ---------------------
 // Queries
 // ---------------------
 
-export function fetchHouseholdMembers(params) {
-  const payload = formatPageQueryWithCount('householdMember', params, HOUSEHOLD_MEMBER_PROJECTION());
-  return graphql(payload, ACTION_TYPE.FETCH_HOUSEHOLD_MEMBERS);
-}
-
-// ---------------------
-// Export
-// ---------------------
-
-export function downloadHouseholdMembers(params) {
-  const payload = `
-    {
-      householdMemberExport${!!params && params.length ? `(${params.join(',')})` : ''}
-    }`;
-  return graphql(payload, ACTION_TYPE.HOUSEHOLD_MEMBERS_EXPORT);
+export function generateValidationList(params) {
+  const payload = formatPageQueryWithCount(
+    'generateHouseholdValidationList', 
+    params, 
+    HOUSEHOLD_MEMBER_PROJECTION()
+  );
+  return graphql(payload, ACTION_TYPE.GENERATE_VALIDATION_LIST);
 }
 
 // ---------------------
 // Clear actions
 // ---------------------
 
-export const clearHouseholdMembers = () => (dispatch) => {
-  dispatch({ type: CLEAR(ACTION_TYPE.FETCH_HOUSEHOLD_MEMBERS) });
-};
-
-export const clearHouseholdMembersExport = () => (dispatch) => {
-  dispatch({ type: CLEAR(ACTION_TYPE.HOUSEHOLD_MEMBERS_EXPORT) });
+export const clearValidationLists = () => (dispatch) => {
+  dispatch({ type: CLEAR(ACTION_TYPE.GENERATE_VALIDATION_LIST) });
 };
