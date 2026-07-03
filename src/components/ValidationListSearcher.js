@@ -60,12 +60,7 @@ function ValidationListSearcher({
     (member) => member.individual?.lastName ?? '',
     (member) => member.individual?.dob ?? '',
     (member) => member.household?.microCatchment ?? '',
-    (member) => {
-      const v = member.household?.isHotspot;
-      if (v === true) return formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.hotspot.true');
-      if (v === false) return formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.hotspot.false');
-      return '';
-    },
+    (member) => member.household?.hotspot ?? '',
     (member) => getVillage(member.individual?.location),
     (member) => (member.household?.prospectiveProjects ?? []).join(', '),
     (member) => member.household?.validationStatus ?? '',
