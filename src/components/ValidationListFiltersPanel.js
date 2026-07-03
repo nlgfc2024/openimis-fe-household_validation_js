@@ -7,6 +7,7 @@ import {
   NumberInput,
   PublishedComponent,
   formatMessage,
+  Autocomplete,
 } from '@openimis/fe-core';
 import {
   DEFAULT_DEBOUNCE_TIME,
@@ -20,15 +21,23 @@ function ValidationListFiltersPanel({
   intl, classes, filters, onChangeFilters,
 }) {
   const filterValue = (filterName) => filters?.[filterName]?.value;
-  const debouncedOnChangeFilters = _debounce(onChangeFilters, DEFAULT_DEBOUNCE_TIME);
+  const onChange = (field) => (value) => {
+    const newData = { ...filters, [field]: value };
+      onChangeFilters(newData);
+  }
 
-  const onChangeNumberFilter = (filterName) => (value) => {
-    onChangeFilters([{
-      id: filterName,
-      value,
-      filter: value != null && value !== '' ? `${filterName}: ${value}` : '',
-    }]);
-  };
+  const onChangeLocation = (location) => {
+    const codes = {};
+    let current = location;
+    while (current) {
+      if (current.type === "R") codes.regionCode = current.code;
+      if (current.type === "D") codes.districtCode = current.code;
+      else if (current.type === "W") codes.taCode = current.code;
+      else if (current.type === "V") codes.villageCode = current.code;
+      current = current.parent ?? null;
+    }
+    return onChange('location')(codes);
+  }
 
   return (
     <Grid container className={classes.form}>
@@ -39,51 +48,48 @@ function ValidationListFiltersPanel({
           withNull
           required={false}
           value={filterValue('location')}
-          onChange={(location) => onChangeFilters([{
-            id: 'location',
-            value: location,
-            filter: location?.uuid ? `individual_Location_Uuid: "${location.uuid}"` : '',
-          }])}
+          onChange={(location) => onChangeLocation(location)}
           filterLabels={false}
           label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.location')}
         />
       </Grid>
 
       {/* Micro-Catchment */}
-      <Grid item xs={12} md={6} className={classes.item}>
-        <TextField
-          select
-          fullWidth
-          label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.microCatchment')}
-          value={filterValue('microCatchment') ?? ''}
-          onChange={(e) => debouncedOnChangeFilters([{
-            id: 'microCatchment',
-            value: e.target.value || null,
-            filter: e.target.value ? `microCatchment_Icontains: "${e.target.value}"` : '',
-          }])}
-          variant="standard"
-        >
-          <MenuItem value="">
-            <em>{formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.microCatchment.any')}</em>
-          </MenuItem>
-          {MICRO_CATCHMENT_OPTIONS.map((microCatchment) => (
-            <MenuItem key={microCatchment} value={microCatchment}>{microCatchment}</MenuItem>
-          ))}
-        </TextField>
+      <Grid item xs={12} md={4} className={classes.item}>
+        <Autocomplete
+          module={HOUSEHOLD_VALIDATION_MODULE_NAME}
+          label="filter.microCatchment"
+          options={MICRO_CATCHMENT_OPTIONS.map((option) => ({ value: option, label: option }))}
+          value={filterValue('catchmentCode') ?? null}
+          onChange={(value) => onChange('catchmentCode')(value)}
+          onInputChange={() => {}}
+          getOptionLabel={(option) => option.label}
+          getOptionSelected={(option, v) => option.value === v?.value}
+        />
+      </Grid>
+
+      {/* Micro-hotspots */}
+      <Grid item xs={12} md={4} className={classes.item}>
+        <Autocomplete
+          module={HOUSEHOLD_VALIDATION_MODULE_NAME}
+          label="filter.hotspots"
+          options={MICRO_CATCHMENT_OPTIONS.map((option) => ({ value: option, label: option }))}
+          value={filterValue('hotspotCode') ?? []}
+          onChange={(value) => onChange('hotspotCode')(value)}
+          onInputChange={() => {}}
+          getOptionLabel={(option) => option.label}
+          getOptionSelected={(option, v) => option.value === v?.value}
+        />
       </Grid>
 
       {/* Last Verified Date */}
-      <Grid item xs={12} md={6} className={classes.item}>
+      <Grid item xs={12} md={4} className={classes.item}>
         <PublishedComponent
           pubRef="core.DatePicker"
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label="filter.lastVerifiedDate"
-          value={filterValue('lastVerifiedDate')}
-          onChange={(value) => onChangeFilters([{
-            id: 'lastVerifiedDate',
-            value,
-            filter: value ? `lastVerifiedDate: "${value}"` : '',
-          }])}
+          value={filterValue('excludeVerifiedAfter') ?? null}
+          onChange={(value) => onChange('excludeVerifiedAfter')(value)}
         />
       </Grid>
 
@@ -94,8 +100,8 @@ function ValidationListFiltersPanel({
           label="filter.femaleHeadedPct"
           min={0}
           max={100}
-          value={filterValue('femaleHeadedHouseholdPct') ?? EMPTY_STRING}
-          onChange={onChangeNumberFilter('femaleHeadedHouseholdPct')}
+          value={filterValue('femaleHeadedPercentage') ?? EMPTY_STRING}
+          onChange={ (value) => onChange('femaleHeadedPercentage')(value)}
         />
       </Grid>
 
@@ -106,8 +112,8 @@ function ValidationListFiltersPanel({
           label="filter.youthPct"
           min={0}
           max={100}
-          value={filterValue('youthPct') ?? EMPTY_STRING}
-          onChange={onChangeNumberFilter('youthPct')}
+          value={filterValue('youthPercentage') ?? EMPTY_STRING}
+          onChange={ (value) => onChange('youthPercentage')(value)}
         />
       </Grid>
 
@@ -118,8 +124,19 @@ function ValidationListFiltersPanel({
           label="filter.reservedPct"
           min={0}
           max={100}
-          value={filterValue('reservedPct') ?? EMPTY_STRING}
-          onChange={onChangeNumberFilter('reservedPct')}
+          value={filterValue('reservedPercentage') ?? EMPTY_STRING}
+          onChange={ (value) => onChange('reservedPercentage')(value)}
+        />
+      </Grid>
+
+      {/* % Total Households Target */}
+      <Grid item xs={12} md={4} className={classes.item}>
+        <NumberInput
+          module={HOUSEHOLD_VALIDATION_MODULE_NAME}
+          label="filter.totalHouseholdsTarget"
+          min={0}
+          value={filterValue('targetCount') ?? EMPTY_STRING}
+          onChange={ (value) => onChange('targetCount')(value)}
         />
       </Grid>
     </Grid>

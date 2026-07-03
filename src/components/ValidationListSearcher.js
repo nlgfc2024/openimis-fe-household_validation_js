@@ -38,8 +38,7 @@ const getVillage = (location) => {
 
 function ValidationListSearcher({
   intl,
-  rights,
-  householdMembers
+  validationListsResults
 }) {
   const modulesManager = useModulesManager();
 
@@ -84,27 +83,19 @@ function ValidationListSearcher({
     ['household_ValidationStatus', true],
   ];
 
-  console.log('householdMembers in ValidationListSearcher:', householdMembers, 'count:', householdMembers?.length);
-  const filterPane = (props) => (
-    <ValidationListFiltersPanel
-      intl={props.intl}
-      classes={props.classes}
-      filters={props.filters}
-      onChangeFilters={props.onChangeFilters}
-    />
-  );
+  console.log('householdMembers in ValidationListSearcher:', validationListsResults, 'count:', validationListsResults?.length);
 
   return (
     <>
       <Searcher
         module={HOUSEHOLD_VALIDATION_MODULE_NAME}
         fetch={() => {}}
-        items={householdMembers}
+        items={validationListsResults}
         tableTitle={formatMessageWithValues(
           intl,
           HOUSEHOLD_VALIDATION_MODULE_NAME,
           'generateValidationList.searcherResultsTitle',
-          { count: householdMembers?.length ?? 0 },
+          { count: validationListsResults?.length ?? 0 },
         )}
         headers={headers}
         itemFormatters={itemFormatters}

@@ -11,7 +11,7 @@ import { formatMessage, withModulesManager } from '@openimis/fe-core';
 import { HOUSEHOLD_VALIDATION_MODULE_NAME } from '../../constants';
 import ValidationListSearcher from '../ValidationListSearcher';
 
-function HouseholdPreviewDialog({ intl, open, onClose, householdMembers }) {
+function HouseholdPreviewDialog({ intl, open, onClose, validationListsResults }) {
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
 
   return (
@@ -34,7 +34,7 @@ function HouseholdPreviewDialog({ intl, open, onClose, householdMembers }) {
       </DialogTitle>
       <DialogContent>
         <div style={{ backgroundColor: '#DFEDEF' }}>
-          <ValidationListSearcher householdMembers={householdMembers} />
+          <ValidationListSearcher validationListsResults={validationListsResults} />
         </div>
       </DialogContent>
       <DialogActions
