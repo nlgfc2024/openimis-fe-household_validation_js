@@ -44,14 +44,14 @@ function ValidationListSearcher({
 
   // ---- headers ----
   const headers = () => [
-    `${HOUSEHOLD_VALIDATION_MODULE_NAME}.member.firstName`,
-    `${HOUSEHOLD_VALIDATION_MODULE_NAME}.member.lastName`,
-    `${HOUSEHOLD_VALIDATION_MODULE_NAME}.member.dob`,
-    `${HOUSEHOLD_VALIDATION_MODULE_NAME}.member.microCatchment`,
-    `${HOUSEHOLD_VALIDATION_MODULE_NAME}.member.hotspot`,
-    `${HOUSEHOLD_VALIDATION_MODULE_NAME}.member.village`,
-    `${HOUSEHOLD_VALIDATION_MODULE_NAME}.member.prospectiveProjects`,
-    `${HOUSEHOLD_VALIDATION_MODULE_NAME}.member.validationStatus`,
+    'member.firstName',
+    'member.lastName',
+    'member.dob',
+    'member.microCatchment',
+    'member.hotspot',
+    'member.village',
+    'member.prospectiveProjects',
+    'member.validationStatus',
   ];
 
   // ---- item formatters ----

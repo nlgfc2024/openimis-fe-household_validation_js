@@ -58,7 +58,7 @@ function ValidationListFiltersPanel({
       <Grid item xs={12} md={4} className={classes.item}>
         <Autocomplete
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
-          label="filter.microCatchment"
+          label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.microCatchment')}
           options={MICRO_CATCHMENT_OPTIONS.map((option) => ({ value: option, label: option }))}
           value={filterValue('catchmentCode')}
           onChange={(value) => onChange('catchmentCode')(value)}
@@ -72,7 +72,7 @@ function ValidationListFiltersPanel({
       <Grid item xs={12} md={4} className={classes.item}>
         <Autocomplete
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
-          label="filter.hotspots"
+          label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.hotspots')}
           options={MICRO_CATCHMENT_OPTIONS.map((option) => ({ value: option, label: option }))}
           value={filterValue('hotspotCode')}
           onChange={(value) => onChange('hotspotCode')(value)}
