@@ -6,7 +6,7 @@
   "generateValidationList.searcherResultsTitle": "Household Members ({count})",
   "generateValidationList.generateButton": "Generate Validation List",
   "generateValidationList.generatingButton": "Generating...",
-  "generateValidationList.summaryTitle": "Validation List Summary",
+  "generateValidationList.summaryTitle": "Generated Validation List Summary",
   "generateValidationList.totalHouseholds": "Total Households In System",
   "generateValidationList.totalIndividuals": "Total Individuals In System",
   "generateValidationList.selectedHouseholds": "Selected Households",

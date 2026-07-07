@@ -44,11 +44,7 @@ const styles = (theme) => ({
     flexWrap: 'wrap',
     padding: theme.spacing(1),
   },
-  summaryLabel: {
-    ...theme.typography?.subtitle1,
-    fontWeight: 'bold',
-    padding: theme.spacing(1),
-  },
+  title: theme.paper.title,
 });
 
 function HouseholdValidationHeadPanel({
@@ -128,8 +124,8 @@ function HouseholdValidationHeadPanel({
           <Grid item xs={12} className={classes.item}>
             <Divider className={classes.divider} />
           </Grid>
-          <Grid item xs={12}>
-            <Typography className={classes.summaryLabel}>
+          <Grid item xs={12} >
+            <Typography className={classes.title}>
               {fm('generateValidationList.summaryTitle')}
             </Typography>
           </Grid>
