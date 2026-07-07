@@ -3,7 +3,7 @@
 
   "generateValidationList.pageTitle": "Generate Validation List",
   "generateValidationList.helmetTitle": "Household Validation - Generate List",
-  "generateValidationList.searcherResultsTitle": "Household Members ({count})",
+  "generateValidationList.searcherResultsTitle": "Generated Household Members Preview ({count})",
   "generateValidationList.generateButton": "Generate Validation List",
   "generateValidationList.generatingButton": "Generating...",
   "generateValidationList.summaryTitle": "Generated Validation List Summary",
