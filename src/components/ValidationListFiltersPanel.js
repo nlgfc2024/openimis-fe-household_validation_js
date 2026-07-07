@@ -60,7 +60,7 @@ function ValidationListFiltersPanel({
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label="filter.microCatchment"
           options={MICRO_CATCHMENT_OPTIONS.map((option) => ({ value: option, label: option }))}
-          value={filterValue('catchmentCode') ?? null}
+          value={filterValue('catchmentCode')}
           onChange={(value) => onChange('catchmentCode')(value)}
           onInputChange={() => {}}
           getOptionLabel={(option) => option.label}
@@ -74,7 +74,7 @@ function ValidationListFiltersPanel({
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label="filter.hotspots"
           options={MICRO_CATCHMENT_OPTIONS.map((option) => ({ value: option, label: option }))}
-          value={filterValue('hotspotCode') ?? []}
+          value={filterValue('hotspotCode')}
           onChange={(value) => onChange('hotspotCode')(value)}
           onInputChange={() => {}}
           getOptionLabel={(option) => option.label}
@@ -98,9 +98,8 @@ function ValidationListFiltersPanel({
         <NumberInput
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label="filter.femaleHeadedPct"
-          min={0}
           max={100}
-          value={filterValue('femaleHeadedPercentage') ?? EMPTY_STRING}
+          value={filterValue('femaleHeadedPercentage')}
           onChange={ (value) => onChange('femaleHeadedPercentage')(value)}
         />
       </Grid>
@@ -110,9 +109,8 @@ function ValidationListFiltersPanel({
         <NumberInput
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label="filter.youthPct"
-          min={0}
           max={100}
-          value={filterValue('youthPercentage') ?? EMPTY_STRING}
+          value={filterValue('youthPercentage')}
           onChange={ (value) => onChange('youthPercentage')(value)}
         />
       </Grid>
@@ -122,9 +120,8 @@ function ValidationListFiltersPanel({
         <NumberInput
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label="filter.reservedPct"
-          min={0}
           max={100}
-          value={filterValue('reservedPercentage') ?? EMPTY_STRING}
+          value={filterValue('reservedPercentage')}
           onChange={ (value) => onChange('reservedPercentage')(value)}
         />
       </Grid>
@@ -134,8 +131,7 @@ function ValidationListFiltersPanel({
         <NumberInput
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label="filter.totalHouseholdsTarget"
-          min={0}
-          value={filterValue('targetCount') ?? EMPTY_STRING}
+          value={filterValue('targetCount')}
           onChange={ (value) => onChange('targetCount')(value)}
         />
       </Grid>
