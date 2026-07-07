@@ -39,3 +39,51 @@ export const MICRO_CATCHMENT_OPTIONS = [
   'Mponela East Block',
   'Zomba Peri-Urban Ring',
 ];
+
+export const GENERATE_VALIDATION_LIST_RESULT_PROJECTION = [
+  'batchId',
+  'fileName',
+  'fileBase64',
+  'householdsSelected',
+  'reserveHouseholds',
+  'memberRows',
+];
+
+export const VALIDATION_PREVIEW_PROJECTION = [
+  'rowType',
+  'category',
+  'groupUuid',
+  'groupCode',
+  'headName',
+  'individualUuid',
+  'individualFirstName',
+  'individualLastName',
+  'individualDob',
+  'individualAge',
+  'individualGender',
+  'fitForWork',
+  'currentRecipientType',
+  'region',
+  'district',
+  'municipality',
+  'village',
+  'wealthQuintile',
+  'lastVerifiedDate',
+  'validationStatus',
+  'prospectiveProjects',
+];
+
+export const VALIDATION_SUMMARY_PROJECTION = [
+  'totalHouseholds',
+  'totalIndividuals',
+  'eligibleHouseholds',
+  'eligibleIndividuals',
+  'selectedHouseholds',
+  'selectedIndividuals',
+  'selectedFemaleHeadedHouseholds',
+  'selectedYouthHouseholds',
+  'selectedOtherHouseholds',
+  'reserveHouseholds',
+  'mainHouseholds',
+  'generatedAt',
+];
