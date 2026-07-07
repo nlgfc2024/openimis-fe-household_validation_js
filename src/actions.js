@@ -1,285 +1,89 @@
 // Disable due to core architecture
 /* eslint-disable camelcase */
-import { 
-  graphqlMutation, 
+import {
   graphql,
+  formatGQLString,
+  formatPageQueryWithCount,
 } from '@openimis/fe-core';
 import { ACTION_TYPE } from './reducer';
 import { REQUEST, SUCCESS, ERROR, CLEAR } from './util/action-type';
+import {
+  GENERATE_VALIDATION_LIST_RESULT_PROJECTION,
+  VALIDATION_PREVIEW_PROJECTION,
+  VALIDATION_SUMMARY_PROJECTION,
+} from './constants';
 
-// ---------------------
-// Mutations
-// ---------------------
 
-const GENERATE_HOUSEHOLD_VALIDATION_LIST_MUTATION = `
-  mutation generateHouseholdValidationList(
-    $regionId: Int,
-    $regionCode: String,
-    $districtId: Int,
-    $districtCode: String,
-    $taId: Int,
-    $taCode: String,
-    $villageId: Int,
-    $villageCode: String,
-    $hotspotId: String,
-    $hotspotCode: String,
-    $catchmentId: String,
-    $catchmentCode: String,
-    $excludeVerifiedAfter: Date,
-    $targetCount: Int,
-    $femaleHeadedPercentage: Int,
-    $youthPercentage: Int,
-    $reservePercentage: Int
-  ) {
-    generateHouseholdValidationList(
-      regionId: $regionId,
-      regionCode: $regionCode,
-      districtId: $districtId,
-      districtCode: $districtCode,
-      taId: $taId,
-      taCode: $taCode,
-      villageId: $villageId,
-      villageCode: $villageCode,
-      hotspotId: $hotspotId,
-      hotspotCode: $hotspotCode,
-      catchmentId: $catchmentId,
-      catchmentCode: $catchmentCode,
-      excludeVerifiedAfter: $excludeVerifiedAfter,
-      targetCount: $targetCount,
-      femaleHeadedPercentage: $femaleHeadedPercentage,
-      youthPercentage: $youthPercentage,
-      reservePercentage: $reservePercentage
-    ) {
-      batchId
-      fileName
-      fileBase64
-      householdsSelected
-      reserveHouseholds
-      memberRows
-    }
-  }
-`;
+function buildGenerateValidationListFilters(filters) {
+  const lines = [];
 
-// Transform frontend filter format to backend mutation variables
-function buildGenerateValidationListVariables(filters) {
-  const vars = {};
-  
-  // Extract location codes
   if (filters?.location) {
-    if (filters.location.regionCode) vars.regionCode = filters.location.regionCode;
-    if (filters.location.districtCode) vars.districtCode = filters.location.districtCode;
-    if (filters.location.taCode) vars.taCode = filters.location.taCode;
-    if (filters.location.villageCode) vars.villageCode = filters.location.villageCode;
+    if (filters.location.regionCode) lines.push(`regionCode: \"${formatGQLString(filters.location.regionCode)}\"`);
+    if (filters.location.districtCode) lines.push(`districtCode: \"${formatGQLString(filters.location.districtCode)}\"`);
+    if (filters.location.taCode) lines.push(`taCode: \"${formatGQLString(filters.location.taCode)}\"`);
+    if (filters.location.villageCode) lines.push(`villageCode: \"${formatGQLString(filters.location.villageCode)}\"`);
   }
-  
-  // Hotspot and catchment
-  if (filters?.hotspotCode) vars.hotspotCode = filters.hotspotCode;
-  if (filters?.catchmentCode) vars.catchmentCode = filters.catchmentCode;
-  
-  // Dates
-  if (filters?.excludeVerifiedAfter) vars.excludeVerifiedAfter = filters.excludeVerifiedAfter;
-  
-  // Percentages
+
+  if (filters?.hotspotCode?.value) lines.push(`hotspotCode: \"${formatGQLString(filters.hotspotCode.value)}\"`);
+  if (filters?.catchmentCode?.value) lines.push(`catchmentCode: \"${formatGQLString(filters.catchmentCode.value)}\"`);
+
+  if (filters?.excludeVerifiedAfter) lines.push(`excludeVerifiedAfter: \"${formatGQLString(filters.excludeVerifiedAfter)}\"`);
+
   if (filters?.femaleHeadedPercentage !== null && filters?.femaleHeadedPercentage !== undefined) {
-    vars.femaleHeadedPercentage = parseInt(filters.femaleHeadedPercentage, 10);
+    lines.push(`femaleHeadedPercentage: ${parseInt(filters.femaleHeadedPercentage, 10)}`);
   }
   if (filters?.youthPercentage !== null && filters?.youthPercentage !== undefined) {
-    vars.youthPercentage = parseInt(filters.youthPercentage, 10);
+    lines.push(`youthPercentage: ${parseInt(filters.youthPercentage, 10)}`);
   }
   if (filters?.reservedPercentage !== null && filters?.reservedPercentage !== undefined) {
-    vars.reservePercentage = parseInt(filters.reservedPercentage, 10);
+    lines.push(`reservePercentage: ${parseInt(filters.reservedPercentage, 10)}`);
   }
-  
-  // Target count
+
   if (filters?.targetCount !== null && filters?.targetCount !== undefined) {
-    vars.targetCount = parseInt(filters.targetCount, 10);
+    lines.push(`targetCount: ${parseInt(filters.targetCount, 10)}`);
   }
-  
-  return vars;
+
+  return lines;
 }
 
 export function generateValidationList(filters) {
-  const variables = buildGenerateValidationListVariables(filters);
-  return graphqlMutation(
-    GENERATE_HOUSEHOLD_VALIDATION_LIST_MUTATION,
-    variables,
-    ACTION_TYPE.GENERATE_VALIDATION_LIST,
+  const args = buildGenerateValidationListFilters(filters);
+  const payload = `
+    mutation {
+      generateHouseholdValidationList(
+        ${args.join('\n')}
+      ) {
+        ${GENERATE_VALIDATION_LIST_RESULT_PROJECTION.join('\n')}
+      }
+    }`;
+  const requestedDateTime = new Date();
+  return graphql(
+    payload,
+    [REQUEST(ACTION_TYPE.GENERATE_VALIDATION_LIST), SUCCESS(ACTION_TYPE.GENERATE_VALIDATION_LIST), ERROR(ACTION_TYPE.GENERATE_VALIDATION_LIST)],
+    {
+      actionType: ACTION_TYPE.GENERATE_VALIDATION_LIST,
+      requestedDateTime,
+    },
   );
 }
 
-// ---------------------
-// Queries
-// ---------------------
-
-const HOUSEHOLD_VALIDATION_SUMMARY_QUERY = `
-  query householdValidationSummary(
-    $regionId: Int,
-    $regionCode: String,
-    $districtId: Int,
-    $districtCode: String,
-    $taId: Int,
-    $taCode: String,
-    $villageId: Int,
-    $villageCode: String,
-    $hotspotId: String,
-    $hotspotCode: String,
-    $catchmentId: String,
-    $catchmentCode: String,
-    $excludeVerifiedAfter: Date,
-    $targetCount: Int,
-    $femaleHeadedPercentage: Int,
-    $youthPercentage: Int,
-    $reservePercentage: Int
-  ) {
-    householdValidationSummary(
-      regionId: $regionId,
-      regionCode: $regionCode,
-      districtId: $districtId,
-      districtCode: $districtCode,
-      taId: $taId,
-      taCode: $taCode,
-      villageId: $villageId,
-      villageCode: $villageCode,
-      hotspotId: $hotspotId,
-      hotspotCode: $hotspotCode,
-      catchmentId: $catchmentId,
-      catchmentCode: $catchmentCode,
-      excludeVerifiedAfter: $excludeVerifiedAfter,
-      targetCount: $targetCount,
-      femaleHeadedPercentage: $femaleHeadedPercentage,
-      youthPercentage: $youthPercentage,
-      reservePercentage: $reservePercentage
-    ) {
-      totalHouseholds
-      totalIndividuals
-      eligibleHouseholds
-      eligibleIndividuals
-      selectedHouseholds
-      selectedIndividuals
-      selectedFemaleHeadedHouseholds
-      selectedYouthHouseholds
-      selectedOtherHouseholds
-      reserveHouseholds
-      mainHouseholds
-      generatedAt
-    }
-  }
-`;
-
-const HOUSEHOLD_VALIDATION_PREVIEW_QUERY = `
-  query householdValidationPreview(
-    $first: Int,
-    $offset: Int,
-    $orderBy: String,
-    $regionId: Int,
-    $regionCode: String,
-    $districtId: Int,
-    $districtCode: String,
-    $taId: Int,
-    $taCode: String,
-    $villageId: Int,
-    $villageCode: String,
-    $hotspotId: String,
-    $hotspotCode: String,
-    $catchmentId: String,
-    $catchmentCode: String,
-    $excludeVerifiedAfter: Date,
-    $targetCount: Int,
-    $femaleHeadedPercentage: Int,
-    $youthPercentage: Int,
-    $reservePercentage: Int
-  ) {
-    householdValidationPreview(
-      first: $first,
-      offset: $offset,
-      orderBy: $orderBy,
-      regionId: $regionId,
-      regionCode: $regionCode,
-      districtId: $districtId,
-      districtCode: $districtCode,
-      taId: $taId,
-      taCode: $taCode,
-      villageId: $villageId,
-      villageCode: $villageCode,
-      hotspotId: $hotspotId,
-      hotspotCode: $hotspotCode,
-      catchmentId: $catchmentId,
-      catchmentCode: $catchmentCode,
-      excludeVerifiedAfter: $excludeVerifiedAfter,
-      targetCount: $targetCount,
-      femaleHeadedPercentage: $femaleHeadedPercentage,
-      youthPercentage: $youthPercentage,
-      reservePercentage: $reservePercentage
-    ) {
-      edges {
-        node {
-          rowType
-          category
-          groupUuid
-          groupCode
-          headName
-          individualUuid
-          individualFirstName
-          individualLastName
-          individualDob
-          individualAge
-          individualGender
-          fitForWork
-          currentRecipientType
-          region
-          district
-          municipality
-          village
-          wealthQuintile
-          lastVerifiedDate
-          validationStatus
-          prospectiveProjects
-        }
-      }
-      totalCount
-      pageInfo {
-        hasNextPage
-        hasPreviousPage
-        startCursor
-        endCursor
-      }
-    }
-  }
-`;
-
 export function fetchHouseholdValidationSummary(filters) {
-  const variables = buildGenerateValidationListVariables(filters);
-  return graphql(
-    HOUSEHOLD_VALIDATION_SUMMARY_QUERY,
-    variables,
-    [
-      REQUEST(ACTION_TYPE.FETCH_VALIDATION_SUMMARY),
-      SUCCESS(ACTION_TYPE.FETCH_VALIDATION_SUMMARY),
-      ERROR(ACTION_TYPE.FETCH_VALIDATION_SUMMARY),
-    ],
-  );
+  const args = buildGenerateValidationListFilters(filters);
+  const payload = `
+    query {
+      householdValidationSummary${args.length ? `(${args.join(',')})` : ''} {
+        ${VALIDATION_SUMMARY_PROJECTION.join('\n')}
+      }
+    }`;
+  return graphql(payload, ACTION_TYPE.FETCH_VALIDATION_SUMMARY);
 }
 
 export function fetchHouseholdValidationPreview(filters, pageSize = 10, offset = 0) {
-  const variables = {
-    ...buildGenerateValidationListVariables(filters),
-    first: pageSize,
-    offset,
-  };
-  return graphql(
-    HOUSEHOLD_VALIDATION_PREVIEW_QUERY,
-    variables,
-    [
-      REQUEST(ACTION_TYPE.FETCH_VALIDATION_PREVIEW),
-      SUCCESS(ACTION_TYPE.FETCH_VALIDATION_PREVIEW),
-      ERROR(ACTION_TYPE.FETCH_VALIDATION_PREVIEW),
-    ],
-  );
+  const args = buildGenerateValidationListFilters(filters);
+  args.push(`first: ${parseInt(pageSize, 10)}`, `offset: ${parseInt(offset, 10)}`);
+  const payload = formatPageQueryWithCount('householdValidationPreview', args, VALIDATION_PREVIEW_PROJECTION);
+  return graphql(payload, ACTION_TYPE.FETCH_VALIDATION_PREVIEW);
 }
-
-// ---------------------
-// Clear actions
-// ---------------------
 
 export const clearValidationLists = () => (dispatch) => {
   dispatch({ type: CLEAR(ACTION_TYPE.GENERATE_VALIDATION_LIST) });

@@ -125,17 +125,18 @@ function reducer(state = INITIAL_STATE, action) {
         errorValidationPreview: null,
       };
 
-    case SUCCESS(ACTION_TYPE.FETCH_VALIDATION_PREVIEW):
+    case SUCCESS(ACTION_TYPE.FETCH_VALIDATION_PREVIEW): {
       const previewData = action.payload.data?.householdValidationPreview;
       return {
         ...state,
         fetchingValidationPreview: false,
         fetchedValidationPreview: true,
         validationPreviewData: previewData?.edges?.map((e) => e.node) ?? [],
-        validationPreviewPageInfo: previewData?.page_info ?? {},
-        validationPreviewTotalCount: previewData?.total_count ?? 0,
+        validationPreviewPageInfo: previewData?.pageInfo ?? {},
+        validationPreviewTotalCount: previewData?.totalCount ?? 0,
         errorValidationPreview: formatGraphQLError(action.payload),
       };
+    }
 
     case ERROR(ACTION_TYPE.FETCH_VALIDATION_PREVIEW):
       return {
