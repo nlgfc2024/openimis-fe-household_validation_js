@@ -14,14 +14,29 @@ import {
 } from './constants';
 
 
+// Walks the raw location entity's parent chain to derive region/district/ta/village codes.
+function extractLocationCodes(location) {
+  const codes = {};
+  let current = location;
+  while (current) {
+    if (current.type === 'R') codes.regionCode = current.code;
+    else if (current.type === 'D') codes.districtCode = current.code;
+    else if (current.type === 'W') codes.taCode = current.code;
+    else if (current.type === 'V') codes.villageCode = current.code;
+    current = current.parent ?? null;
+  }
+  return codes;
+}
+
 function buildGenerateValidationListFilters(filters) {
   const lines = [];
 
   if (filters?.location) {
-    if (filters.location.regionCode) lines.push(`regionCode: \"${formatGQLString(filters.location.regionCode)}\"`);
-    if (filters.location.districtCode) lines.push(`districtCode: \"${formatGQLString(filters.location.districtCode)}\"`);
-    if (filters.location.taCode) lines.push(`taCode: \"${formatGQLString(filters.location.taCode)}\"`);
-    if (filters.location.villageCode) lines.push(`villageCode: \"${formatGQLString(filters.location.villageCode)}\"`);
+    const locationCodes = extractLocationCodes(filters.location);
+    if (locationCodes.regionCode) lines.push(`regionCode: \"${formatGQLString(locationCodes.regionCode)}\"`);
+    if (locationCodes.districtCode) lines.push(`districtCode: \"${formatGQLString(locationCodes.districtCode)}\"`);
+    if (locationCodes.taCode) lines.push(`taCode: \"${formatGQLString(locationCodes.taCode)}\"`);
+    if (locationCodes.villageCode) lines.push(`villageCode: \"${formatGQLString(locationCodes.villageCode)}\"`);
   }
 
   if (filters?.hotspotCode?.value) lines.push(`hotspotCode: \"${formatGQLString(filters.hotspotCode.value)}\"`);

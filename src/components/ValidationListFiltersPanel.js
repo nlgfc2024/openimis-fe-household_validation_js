@@ -20,23 +20,9 @@ import { defaultFilterStyles } from '../util/styles';
 function ValidationListFiltersPanel({
   intl, classes, filters, onChangeFilters,
 }) {
-  const filterValue = (filterName) => filters?.[filterName]?.value;
   const onChange = (field) => (value) => {
     const newData = { ...filters, [field]: value };
       onChangeFilters(newData);
-  }
-
-  const onChangeLocation = (location) => {
-    const codes = {};
-    let current = location;
-    while (current) {
-      if (current.type === "R") codes.regionCode = current.code;
-      if (current.type === "D") codes.districtCode = current.code;
-      else if (current.type === "W") codes.taCode = current.code;
-      else if (current.type === "V") codes.villageCode = current.code;
-      current = current.parent ?? null;
-    }
-    return onChange('location')(codes);
   }
 
   return (
@@ -47,8 +33,8 @@ function ValidationListFiltersPanel({
           pubRef="location.DetailedLocation"
           withNull
           required={false}
-          value={filterValue('location')}
-          onChange={(location) => onChangeLocation(location)}
+          value={filters?.location}
+          onChange={(location) => onChange('location')(location)}
           filterLabels={false}
           label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.location')}
         />
@@ -60,7 +46,7 @@ function ValidationListFiltersPanel({
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.microCatchment')}
           options={MICRO_CATCHMENT_OPTIONS.map((option) => ({ value: option, label: option }))}
-          value={filterValue('catchmentCode')}
+          value={filters?.catchmentCode}
           onChange={(value) => onChange('catchmentCode')(value)}
           onInputChange={() => {}}
           getOptionLabel={(option) => option.label}
@@ -68,13 +54,13 @@ function ValidationListFiltersPanel({
         />
       </Grid>
 
-      {/* Micro-hotspots */}
+      {/* hotspots */}
       <Grid item xs={12} md={4} className={classes.item}>
         <Autocomplete
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.hotspots')}
           options={MICRO_CATCHMENT_OPTIONS.map((option) => ({ value: option, label: option }))}
-          value={filterValue('hotspotCode')}
+          value={filters?.hotspotCode}
           onChange={(value) => onChange('hotspotCode')(value)}
           onInputChange={() => {}}
           getOptionLabel={(option) => option.label}
@@ -88,7 +74,7 @@ function ValidationListFiltersPanel({
           pubRef="core.DatePicker"
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label="filter.lastVerifiedDate"
-          value={filterValue('excludeVerifiedAfter') ?? null}
+          value={filters?.excludeVerifiedAfter ?? null}
           onChange={(value) => onChange('excludeVerifiedAfter')(value)}
         />
       </Grid>
@@ -99,7 +85,7 @@ function ValidationListFiltersPanel({
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label="filter.femaleHeadedPct"
           max={100}
-          value={filterValue('femaleHeadedPercentage')}
+          value={filters?.femaleHeadedPercentage}
           onChange={ (value) => onChange('femaleHeadedPercentage')(value)}
         />
       </Grid>
@@ -110,7 +96,7 @@ function ValidationListFiltersPanel({
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label="filter.youthPct"
           max={100}
-          value={filterValue('youthPercentage')}
+          value={filters?.youthPercentage}
           onChange={ (value) => onChange('youthPercentage')(value)}
         />
       </Grid>
@@ -121,7 +107,7 @@ function ValidationListFiltersPanel({
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label="filter.reservedPct"
           max={100}
-          value={filterValue('reservedPercentage')}
+          value={filters?.reservedPercentage}
           onChange={ (value) => onChange('reservedPercentage')(value)}
         />
       </Grid>
@@ -131,7 +117,7 @@ function ValidationListFiltersPanel({
         <NumberInput
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label="filter.totalHouseholdsTarget"
-          value={filterValue('targetCount')}
+          value={filters?.targetCount}
           onChange={ (value) => onChange('targetCount')(value)}
         />
       </Grid>
