@@ -1,9 +1,12 @@
 export const HOUSEHOLD_VALIDATION_MODULE_NAME = 'householdValidation';
 export const HOUSEHOLD_VALIDATION_MAIN_MENU_CONTRIBUTION_KEY = 'householdValidation.MainMenu';
+// Actions slot rendered in the header of the individual module's GroupSearcher
+export const INDIVIDUAL_GROUP_MENU_CONTRIBUTION_KEY = 'individual.group.GroupMenu';
 
 // Rights
 export const RIGHT_HOUSEHOLD_VALIDATION_SEARCH = 953001;
 export const RIGHT_HOUSEHOLD_VALIDATION_GENERATE = 953002;
+export const RIGHT_HOUSEHOLD_VALIDATION_UPLOAD = 958002;
 
 // Search / Pagination
 export const DEFAULT_PAGE_SIZE = 10;
@@ -71,6 +74,15 @@ export const VALIDATION_PREVIEW_PROJECTION = [
   'lastVerifiedDate',
   'validationStatus',
   'prospectiveProjects',
+];
+
+export const UPLOAD_VALIDATION_LIST_RESULT_PROJECTION = [
+  'rowsRead',
+  'householdsVerified',
+  'householdsNotVerified',
+  'participantUpdates',
+  'errors',
+  'errorMessages',
 ];
 
 export const VALIDATION_SUMMARY_PROJECTION = [

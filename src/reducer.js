@@ -13,6 +13,8 @@ import {
 export const ACTION_TYPE = {
   // Generate validation list mutation
   GENERATE_VALIDATION_LIST: 'GENERATE_VALIDATION_LIST',
+  // Upload validated list mutation
+  UPLOAD_VALIDATION_LIST: 'UPLOAD_VALIDATION_LIST',
   // Fetch validation summary query
   FETCH_VALIDATION_SUMMARY: 'FETCH_VALIDATION_SUMMARY',
   // Fetch validation preview query
@@ -25,6 +27,12 @@ const INITIAL_STATE = {
   generatedValidationLists: false,
   validationListResult: {},
   errorValidationLists: null,
+
+  // Upload validated list
+  uploadingValidationList: false,
+  uploadedValidationList: false,
+  validationUploadResult: {},
+  errorValidationUpload: null,
 
   // Validation summary
   fetchingValidationSummary: false,
@@ -76,6 +84,41 @@ function reducer(state = INITIAL_STATE, action) {
         generatedValidationLists: false,
         validationListResult: {},
         errorValidationLists: null,
+      };
+
+    // -------- UPLOAD VALIDATED LIST MUTATION --------
+    case REQUEST(ACTION_TYPE.UPLOAD_VALIDATION_LIST):
+      return {
+        ...state,
+        uploadingValidationList: true,
+        uploadedValidationList: false,
+        validationUploadResult: {},
+        errorValidationUpload: null,
+      };
+
+    case SUCCESS(ACTION_TYPE.UPLOAD_VALIDATION_LIST):
+      return {
+        ...state,
+        uploadingValidationList: false,
+        uploadedValidationList: true,
+        validationUploadResult: action.payload.data?.uploadHouseholdValidationList ?? {},
+        errorValidationUpload: formatGraphQLError(action.payload),
+      };
+
+    case ERROR(ACTION_TYPE.UPLOAD_VALIDATION_LIST):
+      return {
+        ...state,
+        uploadingValidationList: false,
+        errorValidationUpload: formatServerError(action.payload),
+      };
+
+    case CLEAR(ACTION_TYPE.UPLOAD_VALIDATION_LIST):
+      return {
+        ...state,
+        uploadingValidationList: false,
+        uploadedValidationList: false,
+        validationUploadResult: {},
+        errorValidationUpload: null,
       };
 
     // -------- FETCH VALIDATION SUMMARY QUERY --------

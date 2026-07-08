@@ -9,6 +9,7 @@ import { ACTION_TYPE } from './reducer';
 import { REQUEST, SUCCESS, ERROR, CLEAR } from './util/action-type';
 import {
   GENERATE_VALIDATION_LIST_RESULT_PROJECTION,
+  UPLOAD_VALIDATION_LIST_RESULT_PROJECTION,
   VALIDATION_PREVIEW_PROJECTION,
   VALIDATION_SUMMARY_PROJECTION,
 } from './constants';
@@ -82,6 +83,31 @@ export function generateValidationList(filters) {
   );
 }
 
+export function uploadValidationList(fileBase64, sourceFileName, dryRun = false) {
+  const args = [
+    `fileBase64: "${fileBase64}"`,
+    `sourceFileName: "${formatGQLString(sourceFileName ?? '')}"`,
+    `dryRun: ${!!dryRun}`,
+  ];
+  const payload = `
+    mutation {
+      uploadHouseholdValidationList(
+        ${args.join('\n')}
+      ) {
+        ${UPLOAD_VALIDATION_LIST_RESULT_PROJECTION.join('\n')}
+      }
+    }`;
+  const requestedDateTime = new Date();
+  return graphql(
+    payload,
+    [REQUEST(ACTION_TYPE.UPLOAD_VALIDATION_LIST), SUCCESS(ACTION_TYPE.UPLOAD_VALIDATION_LIST), ERROR(ACTION_TYPE.UPLOAD_VALIDATION_LIST)],
+    {
+      actionType: ACTION_TYPE.UPLOAD_VALIDATION_LIST,
+      requestedDateTime,
+    },
+  );
+}
+
 export function fetchHouseholdValidationSummary(filters) {
   const args = buildGenerateValidationListFilters(filters);
   const payload = `
@@ -102,6 +128,10 @@ export function fetchHouseholdValidationPreview(filters, pageSize = 10, offset =
 
 export const clearValidationLists = () => (dispatch) => {
   dispatch({ type: CLEAR(ACTION_TYPE.GENERATE_VALIDATION_LIST) });
+};
+
+export const clearUploadValidationList = () => (dispatch) => {
+  dispatch({ type: CLEAR(ACTION_TYPE.UPLOAD_VALIDATION_LIST) });
 };
 
 export const clearValidationSummary = () => (dispatch) => {

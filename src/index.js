@@ -9,8 +9,10 @@ import ListAltIcon from '@material-ui/icons/ListAlt';
 import messages_en from './translations/en.json';
 import reducer from './reducer';
 import HouseholdValidationPage from './pages/HouseholdValidationPage';
+import UploadValidatedListDialog from './components/dialogs/UploadValidatedListDialog';
 import {
   HOUSEHOLD_VALIDATION_MODULE_NAME,
+  INDIVIDUAL_GROUP_MENU_CONTRIBUTION_KEY,
   RIGHT_HOUSEHOLD_VALIDATION_SEARCH,
 } from './constants';
 
@@ -33,7 +35,10 @@ const DEFAULT_CONFIG = {
   ],
   refs: [
     { key: `${HOUSEHOLD_VALIDATION_MODULE_NAME}.route.generateValidationList`, ref: ROUTE_GENERATE_VALIDATION_LIST },
+    { key: `${HOUSEHOLD_VALIDATION_MODULE_NAME}.UploadValidatedListDialog`, ref: UploadValidatedListDialog },
   ],
+  // Renders the "Upload Validated List" action (button + dialog)
+  [INDIVIDUAL_GROUP_MENU_CONTRIBUTION_KEY]: UploadValidatedListDialog,
 };
 
 export const HouseholdValidationModule = (cfg) => ({ ...DEFAULT_CONFIG, ...cfg });
