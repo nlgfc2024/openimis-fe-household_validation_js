@@ -158,9 +158,9 @@ function UploadValidatedListDialog({
 
   return (
     <>
-      <Button onClick={handleOpen}>
+      <MenuItem onClick={handleOpen}>
         {fm('uploadValidationList.buttonLabel')}
-      </Button>
+      </MenuItem>
       <Dialog open={isOpen} onClose={handleClose} classes={{ paper: classes.dialogPaper }}>
         <DialogTitle>
           {fm('uploadValidationList.dialogTitle')}

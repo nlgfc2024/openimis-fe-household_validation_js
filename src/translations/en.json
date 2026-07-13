@@ -39,7 +39,7 @@
 
   "dialog.close": "Close",
 
-  "uploadValidationList.buttonLabel": "Upload Validated List",
+  "uploadValidationList.buttonLabel": "UPLOAD VALIDATED LIST",
   "uploadValidationList.dialogTitle": "Upload Validated Household List",
   "uploadValidationList.dryRun": "Validate only (dry run, no changes are saved)",
   "uploadValidationList.upload": "Upload",
