@@ -4,7 +4,6 @@
 import {
   formatServerError,
   formatGraphQLError,
-  pageInfo,
 } from '@openimis/fe-core';
 import {
   REQUEST, SUCCESS, ERROR, CLEAR,

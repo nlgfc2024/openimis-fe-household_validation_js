@@ -2,21 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { injectIntl } from 'react-intl';
 import {
   Searcher,
-  downloadExport,
   formatMessage,
   formatMessageWithValues,
   useModulesManager,
-  CLEARED_STATE_FILTER,
 } from '@openimis/fe-core';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { Dialog, DialogActions, DialogTitle, Button } from '@material-ui/core';
-import {
-  fetchHouseholdMembers,
-  downloadHouseholdMembers,
-  clearHouseholdMembers,
-  clearHouseholdMembersExport,
-} from '../actions';
 import {
   DEFAULT_PAGE_SIZE,
   ROWS_PER_PAGE_OPTIONS,
