@@ -2,13 +2,11 @@ import React, { useState } from 'react';
 import { injectIntl } from 'react-intl';
 import {
   Button,
-  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
-  FormControlLabel,
   Grid,
   Input,
   Typography,
@@ -106,7 +104,6 @@ function UploadValidatedListDialog({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState(null);
-  const [dryRun, setDryRun] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
@@ -124,17 +121,11 @@ function UploadValidatedListDialog({
     if (uploadingValidationList) return;
     setIsOpen(false);
     setFile(null);
-    setDryRun(false);
     resetResult();
   };
 
   const handleFileChange = (event) => {
     setFile(event.target.files?.[0] ?? null);
-    resetResult();
-  };
-
-  const handleDryRunChange = (event) => {
-    setDryRun(event.target.checked);
     resetResult();
   };
 
@@ -149,7 +140,7 @@ function UploadValidatedListDialog({
     }
     const fileBase64 = await readFileAsBase64(file);
     setSubmitted(true);
-    uploadValidationList(fileBase64, file.name, dryRun);
+    uploadValidationList(fileBase64, file.name);
   };
 
   const showResult = submitted && uploadedValidationList
@@ -179,19 +170,6 @@ function UploadValidatedListDialog({
                 disabled={uploadingValidationList}
               />
             </Grid>
-            <Grid item className={classes.item}>
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    checked={dryRun}
-                    onChange={handleDryRunChange}
-                    disabled={uploadingValidationList}
-                    color="primary"
-                  />
-                )}
-                label={fm('uploadValidationList.dryRun')}
-              />
-            </Grid>
 
             {(showResult || showError) && (
               <Grid item className={classes.item}>
@@ -202,9 +180,7 @@ function UploadValidatedListDialog({
             {showResult && (
               <Grid item className={classes.item}>
                 <Typography className={classes.resultTitle}>
-                  {fm(dryRun
-                    ? 'uploadValidationList.dryRunComplete'
-                    : 'uploadValidationList.uploadComplete')}
+                  {fm('uploadValidationList.uploadComplete')}
                 </Typography>
                 {RESULT_FIELDS.map((field) => (
                   <div key={field} className={classes.resultRow}>
