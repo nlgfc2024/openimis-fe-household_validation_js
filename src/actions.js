@@ -83,11 +83,10 @@ export function generateValidationList(filters) {
   );
 }
 
-export function uploadValidationList(fileBase64, sourceFileName, dryRun = false) {
+export function uploadValidationList(fileBase64, sourceFileName) {
   const args = [
     `fileBase64: "${fileBase64}"`,
     `sourceFileName: "${formatGQLString(sourceFileName ?? '')}"`,
-    `dryRun: ${!!dryRun}`,
   ];
   const payload = `
     mutation {
