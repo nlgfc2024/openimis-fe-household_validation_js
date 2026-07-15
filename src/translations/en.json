@@ -39,6 +39,21 @@
 
   "dialog.close": "Close",
 
+  "uploadValidationList.buttonLabel": "UPLOAD VALIDATED LIST",
+  "uploadValidationList.dialogTitle": "Upload Validated Household List",
+  "uploadValidationList.upload": "Upload",
+  "uploadValidationList.uploading": "Uploading...",
+  "uploadValidationList.close": "Close",
+  "uploadValidationList.uploadComplete": "Upload Complete",
+  "uploadValidationList.uploadFailed": "Upload Failed",
+  "uploadValidationList.rowsRead": "Rows Read",
+  "uploadValidationList.householdsVerified": "Households Verified",
+  "uploadValidationList.householdsNotVerified": "Households Not Verified",
+  "uploadValidationList.participantUpdates": "Participant Updates",
+  "uploadValidationList.errors": "Errors",
+  "uploadValidationList.invalidFormat.header": "Invalid File Format",
+  "uploadValidationList.invalidFormat.message": "Please attach the validated list as an .xlsx file.",
+
   "export.label": "Export to Excel",
   "export.filename": "household_validation_list",
   "export.firstName": "First Name",
