@@ -6,12 +6,10 @@ import {
   NumberInput,
   PublishedComponent,
   formatMessage,
-  Autocomplete,
 } from '@openimis/fe-core';
 import {
   DEFAULT_DEBOUNCE_TIME,
   EMPTY_STRING,
-  MICRO_CATCHMENT_OPTIONS,
   HOUSEHOLD_VALIDATION_MODULE_NAME,
 } from '../constants';
 import { defaultFilterStyles } from '../util/styles';
@@ -20,6 +18,8 @@ function ValidationListFiltersPanel({
   intl, classes, filters, onChangeFilters,
 }) {
   const onChange = (field) => (value) => {
+    console.log("Changing the value of ", field, "to ", value);
+
     const newData = { ...filters, [field]: value };
       onChangeFilters(newData);
   }
@@ -68,15 +68,12 @@ function ValidationListFiltersPanel({
 
       {/* hotspots */}
       <Grid item xs={12} md={4} className={classes.item}>
-        <Autocomplete
+        <PublishedComponent
+          pubRef="projectSocialProtection.HotspotPicker"
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.hotspots')}
-          options={MICRO_CATCHMENT_OPTIONS.map((option) => ({ value: option, label: option }))}
-          value={filters?.hotspotCode}
-          onChange={(value) => onChange('hotspotCode')(value)}
-          onInputChange={() => {}}
-          getOptionLabel={(option) => option.label}
-          getOptionSelected={(option, v) => option.value === v?.value}
+          value={filters?.hotspot}
+          onChange={(value) => onChange('hotspot')(value)}
         />
       </Grid>
 
