@@ -66,14 +66,15 @@ function ValidationListFiltersPanel({
         />
       </Grid>
 
-      {/* hotspots */}
+      {/* Village */}
       <Grid item xs={12} md={4} className={classes.item}>
         <PublishedComponent
-          pubRef="projectSocialProtection.HotspotPicker"
+          pubRef="location.HotspotVillagesPicker"
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
-          label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.hotspots')}
-          value={filters?.hotspot}
-          onChange={(value) => onChange('hotspot')(value)}
+          label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.village')}
+          value={filters?.village}
+          microCatchmentUuid={filters?.microCatchment?.uuid}
+          onChange={(value) => onChange('village')(value)}
         />
       </Grid>
 
