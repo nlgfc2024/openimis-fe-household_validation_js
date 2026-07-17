@@ -66,7 +66,7 @@ function ValidationListFiltersPanel({
         />
       </Grid>
 
-      {/* Village */}
+      {/* Villages */}
       <Grid item xs={12} md={4} className={classes.item}>
         <PublishedComponent
           pubRef="location.HotspotVillagesPicker"
