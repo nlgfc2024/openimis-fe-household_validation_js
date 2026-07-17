@@ -56,15 +56,13 @@ function ValidationListFiltersPanel({
 
       {/* Micro-Catchment */}
       <Grid item xs={12} md={4} className={classes.item}>
-        <Autocomplete
+        <PublishedComponent
+          pubRef="location.MicroCatchmentPicker"
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.microCatchment')}
-          options={MICRO_CATCHMENT_OPTIONS.map((option) => ({ value: option, label: option }))}
-          value={filters?.catchmentCode}
-          onChange={(value) => onChange('catchmentCode')(value)}
-          onInputChange={() => {}}
-          getOptionLabel={(option) => option.label}
-          getOptionSelected={(option, v) => option.value === v?.value}
+          value={filters?.microCatchment}
+          district={filters?.district}
+          onChange={(value) => onChange('microCatchment')(value)}
         />
       </Grid>
 
