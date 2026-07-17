@@ -14,34 +14,16 @@ import {
   VALIDATION_SUMMARY_PROJECTION,
 } from './constants';
 
-
-// Walks the raw location entity's parent chain to derive region/district/ta/village codes.
-function extractLocationCodes(location) {
-  const codes = {};
-  let current = location;
-  while (current) {
-    if (current.type === 'R') codes.regionCode = current.code;
-    else if (current.type === 'D') codes.districtCode = current.code;
-    else if (current.type === 'W') codes.taCode = current.code;
-    else if (current.type === 'V') codes.villageCode = current.code;
-    current = current.parent ?? null;
-  }
-  return codes;
-}
-
 function buildGenerateValidationListFilters(filters) {
-  const lines = [];
+  const lines = [
+    `districtCode: \"${formatGQLString(filters.district.code)}\"`,
+    `taCode: \"${formatGQLString(filters.ta.code)}\"`,
+    `catchmentCode: \"${formatGQLString(filters.microCatchment.code)}\"`
+  ];
 
-  if (filters?.location) {
-    const locationCodes = extractLocationCodes(filters.location);
-    if (locationCodes.regionCode) lines.push(`regionCode: \"${formatGQLString(locationCodes.regionCode)}\"`);
-    if (locationCodes.districtCode) lines.push(`districtCode: \"${formatGQLString(locationCodes.districtCode)}\"`);
-    if (locationCodes.taCode) lines.push(`taCode: \"${formatGQLString(locationCodes.taCode)}\"`);
-    if (locationCodes.villageCode) lines.push(`villageCode: \"${formatGQLString(locationCodes.villageCode)}\"`);
+  if (filters?.villages?.length) {
+    lines.push(`villageCodes: ${JSON.stringify(filters.villages.map((v) => v.code))}`);
   }
-
-  if (filters?.hotspotCode?.value) lines.push(`hotspotCode: \"${formatGQLString(filters.hotspotCode.value)}\"`);
-  if (filters?.catchmentCode?.value) lines.push(`catchmentCode: \"${formatGQLString(filters.catchmentCode.value)}\"`);
 
   if (filters?.excludeVerifiedAfter) lines.push(`excludeVerifiedAfter: \"${formatGQLString(filters.excludeVerifiedAfter)}\"`);
 
