@@ -26,16 +26,31 @@ function ValidationListFiltersPanel({
 
   return (
     <Grid container className={classes.form}>
-      {/* Location — detailed location picker (same pattern as IndividualHeadPanel) */}
-      <Grid item xs={12} md={12} className={classes.item}>
+      {/* District Picker */}
+      <Grid item xs={12} md={6} className={classes.item}>
         <PublishedComponent
-          pubRef="location.DetailedLocation"
+          pubRef="location.LocationPicker"
+          withNull
+          multiple={false}
+          value={filters?.district}
+          onChange={(district) => onChange('district')(district)}
+          filterLabels={false}
+          label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.district')}
+        />
+      </Grid>
+
+      {/* TA Picker */}
+      <Grid item xs={12} md={6} className={classes.item}>
+        <PublishedComponent
+          pubRef="location.LocationPicker"
           withNull
           required={false}
-          value={filters?.location}
-          onChange={(location) => onChange('location')(location)}
+          locationLevel={1}
+          parentLocation={filters?.district}
+          value={filters?.ta}
+          onChange={(ta) => onChange('ta')(ta)}
           filterLabels={false}
-          label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.location')}
+          label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.ta')}
         />
       </Grid>
 
