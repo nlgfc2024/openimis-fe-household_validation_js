@@ -31,6 +31,7 @@ function ValidationListFiltersPanel({
         <PublishedComponent
           pubRef="location.LocationPicker"
           withNull
+          required
           multiple={false}
           value={filters?.district}
           onChange={(district) => onChange('district')(district)}
@@ -44,7 +45,7 @@ function ValidationListFiltersPanel({
         <PublishedComponent
           pubRef="location.LocationPicker"
           withNull
-          required={false}
+          required
           locationLevel={1}
           parentLocation={filters?.district}
           value={filters?.ta}
@@ -63,6 +64,7 @@ function ValidationListFiltersPanel({
           value={filters?.microCatchment}
           district={filters?.district}
           onChange={(value) => onChange('microCatchment')(value)}
+          required
         />
       </Grid>
 
@@ -72,9 +74,9 @@ function ValidationListFiltersPanel({
           pubRef="location.HotspotVillagesPicker"
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.village')}
-          value={filters?.village}
+          value={filters?.villages}
           microCatchmentUuid={filters?.microCatchment?.uuid}
-          onChange={(value) => onChange('village')(value)}
+          onChange={(value) => onChange('villages')(value)}
         />
       </Grid>
 
