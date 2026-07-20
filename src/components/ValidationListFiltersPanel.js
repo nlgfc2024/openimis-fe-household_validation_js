@@ -18,10 +18,7 @@ function ValidationListFiltersPanel({
   intl, classes, filters, onChangeFilters,
 }) {
   const onChange = (field) => (value) => {
-    console.log("Changing the value of ", field, "to ", value);
-
-    const newData = { ...filters, [field]: value };
-      onChangeFilters(newData);
+    onChangeFilters({ ...filters, [field]: value });
   }
 
   return (
