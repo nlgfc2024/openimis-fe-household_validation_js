@@ -6,6 +6,7 @@
   "generateValidationList.searcherResultsTitle": "Generated Household Members Preview ({count})",
   "generateValidationList.generateButton": "Generate Validation List",
   "generateValidationList.generatingButton": "Generating...",
+  "generateValidationList.missingRequiredFilters": "Select a district, TA and micro-catchment to generate a validation list.",
   "generateValidationList.summaryTitle": "Generated Validation List Summary",
   "generateValidationList.totalHouseholds": "Total Households In System",
   "generateValidationList.totalIndividuals": "Total Individuals In System",
