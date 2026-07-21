@@ -16,18 +16,18 @@ import {
 
 function buildGenerateValidationListFilters(filters) {
   const lines = [];
-  if(filters?.district?.code) {
+  if (filters?.district?.code) {
     lines.push(`districtCode: \"${formatGQLString(filters.district.code)}\"`);
   }
 
-  if(filters?.ta?.code) {
+  if (filters?.ta?.code) {
     lines.push(`taCode: \"${formatGQLString(filters.ta.code)}\"`);
   }
-  
-  if(filters?.microCatchment?.code) {
+
+  if (filters?.microCatchment?.code) {
     lines.push(`catchmentCode: \"${formatGQLString(filters.microCatchment.code)}\"`);
   }
-  
+
   if (filters?.villages?.length) {
     lines.push(`villageCodes: ${JSON.stringify(filters.villages.map((v) => v.code))}`);
   }

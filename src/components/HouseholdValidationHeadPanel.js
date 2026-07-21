@@ -18,6 +18,7 @@ import { bindActionCreators } from 'redux';
 import ValidationListFiltersPanel from './ValidationListFiltersPanel';
 import HouseholdPreviewDialog from './dialogs/HouseholdPreviewDialog';
 import { HOUSEHOLD_VALIDATION_MODULE_NAME } from '../constants';
+import { hasRequiredGenerationFilters } from '../util/filters';
 import {
   generateValidationList,
   fetchHouseholdValidationSummary,
@@ -67,6 +68,7 @@ function HouseholdValidationHeadPanel({
 }) {
   const [showPreview, setShowPreview] = React.useState(false);
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
+  const canGenerate = hasRequiredGenerationFilters(edited);
 
   // Fetch summary after generation
   useEffect(() => {
@@ -110,12 +112,17 @@ function HouseholdValidationHeadPanel({
           variant="contained"
           color="primary"
           onClick={() => generateValidationList(edited)}
-          disabled={generatingValidationLists}
+          disabled={generatingValidationLists || !canGenerate}
         >
           {generatingValidationLists
             ? fm('generateValidationList.generatingButton')
             : fm('generateValidationList.generateButton')}
         </Button>
+        {!canGenerate && (
+          <Typography variant="body2" color="textSecondary">
+            {fm('generateValidationList.missingRequiredFilters')}
+          </Typography>
+        )}
       </Grid>
 
       {/* ── Validation List Results Summary (only after list generation) ── */}
