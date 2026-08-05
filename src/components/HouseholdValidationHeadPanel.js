@@ -257,6 +257,7 @@ function HouseholdValidationHeadPanel({
       <HouseholdPreviewDialog
         open={showPreview}
         onClose={() => setShowPreview(false)}
+        filters={edited}
       />
     </Grid>
   );
