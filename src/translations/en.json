@@ -28,12 +28,13 @@
   "filter.totalHouseholdsTarget": "Total Households Target",
 
   "member.householdCode": "Household Code",
+  "member.rowType": "Row Type",
   "member.firstName": "First Name",
   "member.lastName": "Last Name",
   "member.dob": "Date of Birth",
-  "member.microCatchment": "Micro Catchment",
-  "member.hotspot": "Hotspot",
+  "member.district": "District",
   "member.village": "Village",
+  "member.wealthQuintile": "Wealth Quintile",
   "member.prospectiveProjects": "Prospective Projects",
   "member.validationStatus": "Validation Status",
 
