@@ -1,36 +1,57 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { injectIntl } from 'react-intl';
 import {
   Searcher,
-  formatMessage,
   formatMessageWithValues,
   useModulesManager,
 } from '@openimis/fe-core';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import { Dialog, DialogActions, DialogTitle, Button } from '@material-ui/core';
 import {
   DEFAULT_PAGE_SIZE,
   ROWS_PER_PAGE_OPTIONS,
-  RIGHT_HOUSEHOLD_VALIDATION_SEARCH,
   HOUSEHOLD_VALIDATION_MODULE_NAME,
 } from '../constants';
-import ValidationListFiltersPanel from './ValidationListFiltersPanel';
+import { fetchHouseholdValidationPreview } from '../actions';
 
-// Extract the village name (deepest level) from a nested location object
-const getVillage = (location) => {
-  let loc = location;
-  let deepest = null;
-  while (loc) {
-    deepest = loc;
-    loc = loc.parent ?? null;
+// Our `householdValidationPreview` query is offset-paginated (not a Relay connection), but its
+// pageInfo cursors are literal stringified offsets, so we can parse the cursor/first/last params
+// the generic Searcher builds and translate them back into an offset + page size.
+const paramsToOffsetAndPageSize = (params) => {
+  const paramsArr = Array.isArray(params) ? params : [];
+  let pageSize = DEFAULT_PAGE_SIZE;
+  let afterCursor = null;
+  let beforeCursor = null;
+
+  paramsArr.forEach((param) => {
+    const firstMatch = /^first:\s*(\d+)$/.exec(param);
+    const lastMatch = /^last:\s*(\d+)$/.exec(param);
+    const afterMatch = /^after:\s*"([^"]*)"$/.exec(param);
+    const beforeMatch = /^before:\s*"([^"]*)"$/.exec(param);
+    if (firstMatch) pageSize = parseInt(firstMatch[1], 10);
+    if (lastMatch) pageSize = parseInt(lastMatch[1], 10);
+    if (afterMatch) [, afterCursor] = afterMatch;
+    if (beforeMatch) [, beforeCursor] = beforeMatch;
+  });
+
+  let offset = 0;
+  if (afterCursor !== null) {
+    offset = parseInt(afterCursor, 10) + 1;
+  } else if (beforeCursor !== null) {
+    offset = Math.max(0, parseInt(beforeCursor, 10) - pageSize);
   }
-  return deepest?.name ?? '';
+  return { offset, pageSize };
 };
 
 function ValidationListSearcher({
   intl,
-  validationListsResults
+  filters,
+  validationListsResults,
+  validationPreviewPageInfo,
+  validationPreviewTotalCount,
+  fetchingValidationPreview,
+  fetchedValidationPreview,
+  fetchHouseholdValidationPreview,
 }) {
   const modulesManager = useModulesManager();
 
@@ -39,63 +60,76 @@ function ValidationListSearcher({
     'member.firstName',
     'member.lastName',
     'member.dob',
-    'member.microCatchment',
-    'member.hotspot',
+    'member.district',
     'member.village',
+    'member.wealthQuintile',
     'member.prospectiveProjects',
     'member.validationStatus',
   ];
 
   // ---- item formatters ----
   const itemFormatters = () => [
-    (member) => member.individual?.firstName ?? '',
-    (member) => member.individual?.lastName ?? '',
-    (member) => member.individual?.dob ?? '',
-    (member) => member.household?.microCatchment ?? '',
-    (member) => member.household?.hotspot ?? '',
-    (member) => getVillage(member.individual?.location),
-    (member) => (member.household?.prospectiveProjects ?? []).join(', '),
-    (member) => member.household?.validationStatus ?? '',
+    (member) => member.individualFirstName ?? '',
+    (member) => member.individualLastName ?? '',
+    (member) => member.individualDob ?? '',
+    (member) => member.district ?? '',
+    (member) => member.village ?? '',
+    (member) => member.wealthQuintile ?? '',
+    (member) => (member.prospectiveProjects ?? []).join(', '),
+    (member) => member.validationStatus ?? '',
   ];
 
   // ---- sorts ----
   const sorts = () => [
-    ['individual_FirstName', true],
-    ['individual_LastName', true],
-    ['individual_Dob', true],
-    ['household_MicroCatchment', true],
-    ['household_IsHotspot', false],
-    null, // village (computed)
+    ['individualFirstName', true],
+    ['individualLastName', true],
+    ['individualDob', true],
+    ['district', true],
+    ['village', true],
+    ['wealthQuintile', true],
     null, // prospective projects
-    ['household_ValidationStatus', true],
+    ['validationStatus', true],
   ];
 
-  console.log('householdMembers in ValidationListSearcher:', validationListsResults, 'count:', validationListsResults?.length);
+  const fetch = (params) => {
+    const { offset, pageSize } = paramsToOffsetAndPageSize(params);
+    fetchHouseholdValidationPreview(filters, pageSize, offset);
+  };
 
   return (
-    <>
-      <Searcher
-        module={HOUSEHOLD_VALIDATION_MODULE_NAME}
-        fetch={() => {}}
-        items={validationListsResults}
-        tableTitle={formatMessageWithValues(
-          intl,
-          HOUSEHOLD_VALIDATION_MODULE_NAME,
-          'generateValidationList.searcherResultsTitle',
-          { count: validationListsResults?.length ?? 0 },
-        )}
-        headers={headers}
-        itemFormatters={itemFormatters}
-        sorts={sorts}
-        rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
-        defaultPageSize={DEFAULT_PAGE_SIZE}
-      />
-    </>
+    <Searcher
+      module={HOUSEHOLD_VALIDATION_MODULE_NAME}
+      fetch={fetch}
+      items={validationListsResults}
+      itemsPageInfo={{ ...validationPreviewPageInfo, totalCount: validationPreviewTotalCount }}
+      fetchingItems={fetchingValidationPreview}
+      fetchedItems={fetchedValidationPreview}
+      tableTitle={formatMessageWithValues(
+        intl,
+        HOUSEHOLD_VALIDATION_MODULE_NAME,
+        'generateValidationList.searcherResultsTitle',
+        { count: validationPreviewTotalCount ?? 0 },
+      )}
+      headers={headers}
+      itemFormatters={itemFormatters}
+      sorts={sorts}
+      rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
+      defaultPageSize={DEFAULT_PAGE_SIZE}
+    />
   );
 }
 
 const mapStateToProps = (state) => ({
   rights: state.core?.user?.i_user?.rights ?? [],
+  validationListsResults: state.householdValidation?.validationPreviewData ?? [],
+  validationPreviewPageInfo: state.householdValidation?.validationPreviewPageInfo ?? {},
+  validationPreviewTotalCount: state.householdValidation?.validationPreviewTotalCount ?? 0,
+  fetchingValidationPreview: state.householdValidation?.fetchingValidationPreview,
+  fetchedValidationPreview: state.householdValidation?.fetchedValidationPreview,
 });
 
-export default injectIntl(connect(mapStateToProps)(ValidationListSearcher));
+const mapDispatchToProps = (dispatch) => bindActionCreators({
+  fetchHouseholdValidationPreview,
+}, dispatch);
+
+export default injectIntl(connect(mapStateToProps, mapDispatchToProps)(ValidationListSearcher));
