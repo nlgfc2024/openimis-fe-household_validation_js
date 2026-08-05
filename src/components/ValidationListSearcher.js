@@ -64,6 +64,7 @@ function ValidationListSearcher({
     'member.village',
     'member.wealthQuintile',
     'member.prospectiveProjects',
+    'member.rowType',
     'member.validationStatus',
   ];
 
@@ -76,6 +77,7 @@ function ValidationListSearcher({
     (member) => member.village ?? '',
     (member) => member.wealthQuintile ?? '',
     (member) => (member.prospectiveProjects ?? []).join(', '),
+    (member) => member.rowType ?? '',
     (member) => member.validationStatus ?? '',
   ];
 
@@ -88,6 +90,7 @@ function ValidationListSearcher({
     ['village', true],
     ['wealthQuintile', true],
     null, // prospective projects
+    ['rowType', true],
     ['validationStatus', true],
   ];
 
