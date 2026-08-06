@@ -81,19 +81,6 @@ function ValidationListSearcher({
     (member) => member.validationStatus ?? '',
   ];
 
-  // ---- sorts ----
-  const sorts = () => [
-    ['individualFirstName', true],
-    ['individualLastName', true],
-    ['individualDob', true],
-    ['district', true],
-    ['village', true],
-    ['wealthQuintile', true],
-    null, // prospective projects
-    ['rowType', true],
-    ['validationStatus', true],
-  ];
-
   const fetch = (params) => {
     const { offset, pageSize } = paramsToOffsetAndPageSize(params);
     fetchHouseholdValidationPreview(filters, pageSize, offset);
@@ -115,7 +102,6 @@ function ValidationListSearcher({
       )}
       headers={headers}
       itemFormatters={itemFormatters}
-      sorts={sorts}
       rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
       defaultPageSize={DEFAULT_PAGE_SIZE}
     />
