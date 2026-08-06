@@ -17,7 +17,7 @@ import { fetchHouseholdValidationPreview } from '../actions';
 // Our `householdValidationPreview` query is offset-paginated (not a Relay connection), but its
 // pageInfo cursors are literal stringified offsets, so we can parse the cursor/first/last params
 // the generic Searcher builds and translate them back into an offset + page size.
-const paramsToOffsetAndPageSize = (params) => {
+export const paramsToOffsetAndPageSize = (params) => {
   const paramsArr = Array.isArray(params) ? params : [];
   let pageSize = DEFAULT_PAGE_SIZE;
   let afterCursor = null;
@@ -109,7 +109,6 @@ function ValidationListSearcher({
 }
 
 const mapStateToProps = (state) => ({
-  rights: state.core?.user?.i_user?.rights ?? [],
   validationListsResults: state.householdValidation?.validationPreviewData ?? [],
   validationPreviewPageInfo: state.householdValidation?.validationPreviewPageInfo ?? {},
   validationPreviewTotalCount: state.householdValidation?.validationPreviewTotalCount ?? 0,

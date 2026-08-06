@@ -22,7 +22,6 @@ import { hasRequiredGenerationFilters } from '../util/filters';
 import {
   generateValidationList,
   fetchHouseholdValidationSummary,
-  fetchHouseholdValidationPreview,
 } from '../actions';
 
 const styles = (theme) => ({
@@ -57,14 +56,12 @@ function HouseholdValidationHeadPanel({
   generatingValidationLists,
   generatedValidationLists,
   validationListResult,
-  fetchedValidationPreview,
   // Summary state
   validationSummary,
   fetchedValidationSummary,
   // Actions
   generateValidationList,
   fetchHouseholdValidationSummary,
-  fetchHouseholdValidationPreview,
 }) {
   const [showPreview, setShowPreview] = React.useState(false);
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
@@ -269,14 +266,11 @@ const mapStateToProps = (state) => ({
   validationListResult: state.householdValidation?.validationListResult ?? {},
   validationSummary: state.householdValidation?.validationSummary ?? {},
   fetchedValidationSummary: state.householdValidation?.fetchedValidationSummary,
-  validationPreviewData: state.householdValidation?.validationPreviewData ?? [],
-  fetchedValidationPreview: state.householdValidation?.fetchedValidationPreview,
 });
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
   generateValidationList,
   fetchHouseholdValidationSummary,
-  fetchHouseholdValidationPreview,
 }, dispatch);
 
 export default withModulesManager(
