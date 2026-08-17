@@ -46,16 +46,6 @@ function buildGenerateValidationListFilters(filters) {
 
   if (filters?.excludeVerifiedAfter) lines.push(`excludeVerifiedAfter: \"${formatGQLString(filters.excludeVerifiedAfter)}\"`);
 
-  if (filters?.femaleHeadedPercentage !== null && filters?.femaleHeadedPercentage !== undefined) {
-    lines.push(`femaleHeadedPercentage: ${parseInt(filters.femaleHeadedPercentage, 10)}`);
-  }
-  if (filters?.youthPercentage !== null && filters?.youthPercentage !== undefined) {
-    lines.push(`youthPercentage: ${parseInt(filters.youthPercentage, 10)}`);
-  }
-  if (filters?.reservedPercentage !== null && filters?.reservedPercentage !== undefined) {
-    lines.push(`reservePercentage: ${parseInt(filters.reservedPercentage, 10)}`);
-  }
-
   if (filters?.targetCount !== null && filters?.targetCount !== undefined) {
     lines.push(`targetCount: ${parseInt(filters.targetCount, 10)}`);
   }
