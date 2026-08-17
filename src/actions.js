@@ -30,6 +30,13 @@ function buildGenerateValidationListFilters(filters) {
   if (filters?.microCatchment?.code) {
     lines.push(`catchmentCode: \"${formatGQLString(filters.microCatchment.code)}\"`);
   }
+  if (filters?.microCatchment?.uuid) {
+    lines.push(`catchmentId: \"${formatGQLString(filters.microCatchment.uuid)}\"`);
+  }
+
+  if (filters?.hotspot?.code) {
+    lines.push(`hotspotCode: \"${formatGQLString(filters.hotspot.code)}\"`);
+  }
 
   if (filters?.villages?.length) {
     lines.push(`villageCodes: ${JSON.stringify(filters.villages.map((v) => v.code))}`);
