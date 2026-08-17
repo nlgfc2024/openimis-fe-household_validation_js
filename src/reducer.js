@@ -14,8 +14,6 @@ export const ACTION_TYPE = {
   GENERATE_VALIDATION_LIST: 'GENERATE_VALIDATION_LIST',
   // Upload validated list mutation
   UPLOAD_VALIDATION_LIST: 'UPLOAD_VALIDATION_LIST',
-  // Fetch validation summary query
-  FETCH_VALIDATION_SUMMARY: 'FETCH_VALIDATION_SUMMARY',
   // Fetch validation preview query
   FETCH_VALIDATION_PREVIEW: 'FETCH_VALIDATION_PREVIEW',
 };
@@ -32,12 +30,6 @@ const INITIAL_STATE = {
   uploadedValidationList: false,
   validationUploadResult: {},
   errorValidationUpload: null,
-
-  // Validation summary
-  fetchingValidationSummary: false,
-  fetchedValidationSummary: false,
-  validationSummary: {},
-  errorValidationSummary: null,
 
   // Validation preview
   fetchingValidationPreview: false,
@@ -125,42 +117,7 @@ function reducer(state = INITIAL_STATE, action) {
         validationUploadResult: {},
         errorValidationUpload: null,
       };
-
-    // -------- FETCH VALIDATION SUMMARY QUERY --------
-    case REQUEST(ACTION_TYPE.FETCH_VALIDATION_SUMMARY):
-      return {
-        ...state,
-        fetchingValidationSummary: true,
-        fetchedValidationSummary: false,
-        validationSummary: {},
-        errorValidationSummary: null,
-      };
-
-    case SUCCESS(ACTION_TYPE.FETCH_VALIDATION_SUMMARY):
-      return {
-        ...state,
-        fetchingValidationSummary: false,
-        fetchedValidationSummary: true,
-        validationSummary: action.payload.data?.householdValidationSummary ?? {},
-        errorValidationSummary: formatGraphQLError(action.payload),
-      };
-
-    case ERROR(ACTION_TYPE.FETCH_VALIDATION_SUMMARY):
-      return {
-        ...state,
-        fetchingValidationSummary: false,
-        errorValidationSummary: formatServerError(action.payload),
-      };
-
-    case CLEAR(ACTION_TYPE.FETCH_VALIDATION_SUMMARY):
-      return {
-        ...state,
-        fetchingValidationSummary: false,
-        fetchedValidationSummary: false,
-        validationSummary: {},
-        errorValidationSummary: null,
-      };
-
+      
     // -------- FETCH VALIDATION PREVIEW QUERY --------
     case REQUEST(ACTION_TYPE.FETCH_VALIDATION_PREVIEW):
       return {

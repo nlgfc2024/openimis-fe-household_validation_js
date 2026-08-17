@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { injectIntl } from 'react-intl';
 import {
   Button,
@@ -19,10 +19,7 @@ import ValidationListFiltersPanel from './ValidationListFiltersPanel';
 import HouseholdPreviewDialog from './dialogs/HouseholdPreviewDialog';
 import { HOUSEHOLD_VALIDATION_MODULE_NAME } from '../constants';
 import { hasRequiredGenerationFilters } from '../util/filters';
-import {
-  generateValidationList,
-  fetchHouseholdValidationSummary,
-} from '../actions';
+import { generateValidationList } from '../actions';
 
 const styles = (theme) => ({
   item: theme.paper.item,
@@ -56,23 +53,12 @@ function HouseholdValidationHeadPanel({
   generatingValidationLists,
   generatedValidationLists,
   validationListResult,
-  // Summary state
-  validationSummary,
-  fetchedValidationSummary,
   // Actions
-  generateValidationList,
-  fetchHouseholdValidationSummary,
+  generateValidationList
 }) {
   const [showPreview, setShowPreview] = React.useState(false);
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
   const canGenerate = hasRequiredGenerationFilters(edited);
-
-  // Fetch summary after generation
-  useEffect(() => {
-    if (generatedValidationLists && !fetchedValidationSummary) {
-      fetchHouseholdValidationSummary(edited);
-    }
-  }, [generatedValidationLists, fetchedValidationSummary, edited, fetchHouseholdValidationSummary]);
 
   const exportToCSV = () => {
     const byteCharacters = atob(validationListResult.fileBase64);
@@ -141,7 +127,7 @@ function HouseholdValidationHeadPanel({
                   {fm('generateValidationList.totalHouseholds')}
                 </Typography>
                 <Typography className={classes.cardNumber}>
-                  {validationSummary?.totalHouseholds?.toLocaleString() ?? 0}
+                  {validationListResult?.totalHouseholds?.toLocaleString() ?? 0}
                 </Typography>
               </CardContent>
             </Card>
@@ -154,7 +140,7 @@ function HouseholdValidationHeadPanel({
                   {fm('generateValidationList.totalIndividuals')}
                 </Typography>
                 <Typography className={classes.cardNumber}>
-                  {validationSummary?.totalIndividuals?.toLocaleString() ?? 0}
+                  {validationListResult?.totalIndividuals?.toLocaleString() ?? 0}
                 </Typography>
               </CardContent>
             </Card>
@@ -167,7 +153,7 @@ function HouseholdValidationHeadPanel({
                   {fm('generateValidationList.selectedHouseholds')}
                 </Typography>
                 <Typography className={classes.cardNumber}>
-                  {validationSummary?.selectedHouseholds?.toLocaleString() ?? 0}
+                  {validationListResult?.selectedHouseholds?.toLocaleString() ?? 0}
                 </Typography>
               </CardContent>
             </Card>
@@ -180,7 +166,7 @@ function HouseholdValidationHeadPanel({
                   {fm('generateValidationList.selectedIndividuals')}
                 </Typography>
                 <Typography className={classes.cardNumber}>
-                  {validationSummary?.selectedIndividuals?.toLocaleString() ?? 0}
+                  {validationListResult?.selectedIndividuals?.toLocaleString() ?? 0}
                 </Typography>
               </CardContent>
             </Card>
@@ -193,7 +179,7 @@ function HouseholdValidationHeadPanel({
                   {fm('generateValidationList.selectedFemaleHeaded')}
                 </Typography>
                 <Typography className={classes.cardNumber}>
-                  {validationSummary?.selectedFemaleHeadedHouseholds?.toLocaleString() ?? 0}
+                  {validationListResult?.selectedFemaleHeadedHouseholds?.toLocaleString() ?? 0}
                 </Typography>
               </CardContent>
             </Card>
@@ -206,7 +192,7 @@ function HouseholdValidationHeadPanel({
                   {fm('generateValidationList.selectedYouthHeaded')}
                 </Typography>
                 <Typography className={classes.cardNumber}>
-                  {validationSummary?.selectedYouthHouseholds?.toLocaleString() ?? 0}
+                  {validationListResult?.selectedYouthHouseholds?.toLocaleString() ?? 0}
                 </Typography>
               </CardContent>
             </Card>
@@ -219,7 +205,7 @@ function HouseholdValidationHeadPanel({
                   {fm('generateValidationList.selectedReserve')}
                 </Typography>
                 <Typography className={classes.cardNumber}>
-                  {validationSummary?.reserveHouseholds?.toLocaleString() ?? 0}
+                  {validationListResult?.reserveHouseholds?.toLocaleString() ?? 0}
                 </Typography>
               </CardContent>
             </Card>
@@ -264,13 +250,10 @@ const mapStateToProps = (state) => ({
   generatingValidationLists: state.householdValidation?.generatingValidationLists,
   generatedValidationLists: state.householdValidation?.generatedValidationLists,
   validationListResult: state.householdValidation?.validationListResult ?? {},
-  validationSummary: state.householdValidation?.validationSummary ?? {},
-  fetchedValidationSummary: state.householdValidation?.fetchedValidationSummary,
 });
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
-  generateValidationList,
-  fetchHouseholdValidationSummary,
+  generateValidationList
 }, dispatch);
 
 export default withModulesManager(
