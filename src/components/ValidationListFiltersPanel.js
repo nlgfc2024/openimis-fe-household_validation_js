@@ -9,6 +9,7 @@ import {
 } from '@openimis/fe-core';
 import { HOUSEHOLD_VALIDATION_MODULE_NAME } from '../constants';
 import { defaultFilterStyles } from '../util/styles';
+import HotspotPicker from './HotspotPicker';
 
 function ValidationListFiltersPanel({
   intl, classes, filters, onChangeFilters,
@@ -22,6 +23,14 @@ function ValidationListFiltersPanel({
     return (options) => options.filter((option) => allowedUuids.has(option.uuid));
   };
 
+  const filterDistrictMicroCatchments = (options) => {
+    const districtUuid = filters?.district?.uuid;
+    if (!districtUuid) return [];
+    return options.filter(
+      (microCatchment) => microCatchment?.district?.uuid === districtUuid,
+    );
+  };
+
   const onChange = (field) => (value) => {
     onChangeFilters({ ...filters, [field]: value });
   };
@@ -32,6 +41,7 @@ function ValidationListFiltersPanel({
       district,
       microCatchment: null,
       tas: [],
+      hotspot: null,
       gvhs: [],
       villages: [],
     });
@@ -40,8 +50,10 @@ function ValidationListFiltersPanel({
   const onChangeMicroCatchment = (microCatchment) => {
     onChangeFilters({
       ...filters,
+      district: microCatchment?.district ?? filters?.district ?? null,
       microCatchment,
       tas: [],
+      hotspot: null,
       gvhs: [],
       villages: [],
     });
@@ -51,6 +63,16 @@ function ValidationListFiltersPanel({
     onChangeFilters({
       ...filters,
       tas: tas ?? [],
+      hotspot: null,
+      gvhs: [],
+      villages: [],
+    });
+  };
+
+  const onChangeHotspot = (hotspot) => {
+    onChangeFilters({
+      ...filters,
+      hotspot,
       gvhs: [],
       villages: [],
     });
@@ -83,12 +105,14 @@ function ValidationListFiltersPanel({
       {/* Micro-Catchment */}
       <Grid item xs={12} md={6} className={classes.item}>
         <PublishedComponent
+          key={filters?.district?.uuid ?? 'no-district'}
           pubRef="location.MicroCatchmentPicker"
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.microCatchment')}
           value={filters?.microCatchment}
           district={filters?.district}
           readOnly={!filters?.district}
+          filterOptions={filterDistrictMicroCatchments}
           onChange={onChangeMicroCatchment}
           required
         />
@@ -105,7 +129,18 @@ function ValidationListFiltersPanel({
           onChange={onChangeTas}
           filterOptions={filterCatchmentLocations(filters?.microCatchment?.traditionalAuthorities)}
           label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.ta')}
-          required
+        />
+      </Grid>
+
+      {/* Hotspot */}
+      <Grid item xs={12} md={4} className={classes.item}>
+        <HotspotPicker
+          label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.hotspot')}
+          microCatchment={filters?.microCatchment}
+          tas={filters?.tas ?? []}
+          value={filters?.hotspot}
+          readOnly={!filters?.tas?.length}
+          onChange={onChangeHotspot}
         />
       </Grid>
 
@@ -116,9 +151,17 @@ function ValidationListFiltersPanel({
           multiple
           parentLocations={(filters?.tas ?? []).map((ta) => ta.uuid)}
           value={filters?.gvhs ?? []}
-          readOnly={!filters?.tas?.length}
+          readOnly={!filters?.hotspot}
           onChange={onChangeGvhs}
-          filterOptions={filterCatchmentLocations(filters?.microCatchment?.gvhs)}
+          filterOptions={(options) => {
+            const catchmentGvhUuids = catchmentLocationUuids(filters?.microCatchment?.gvhs);
+            const hotspotGvhUuids = new Set(
+              (filters?.hotspot?.villages ?? []).map((village) => village?.parent?.uuid).filter(Boolean),
+            );
+            return options.filter(
+              (option) => catchmentGvhUuids.has(option.uuid) && hotspotGvhUuids.has(option.uuid),
+            );
+          }}
           label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.gvh')}
         />
       </Grid>
@@ -132,6 +175,12 @@ function ValidationListFiltersPanel({
           value={filters?.villages ?? []}
           readOnly={!filters?.gvhs?.length}
           onChange={(value) => onChange('villages')(value ?? [])}
+          filterOptions={(options) => {
+            const hotspotVillageUuids = new Set(
+              (filters?.hotspot?.villages ?? []).map((village) => village?.uuid).filter(Boolean),
+            );
+            return options.filter((option) => hotspotVillageUuids.has(option.uuid));
+          }}
           label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.village')}
         />
       </Grid>
@@ -147,44 +196,13 @@ function ValidationListFiltersPanel({
         />
       </Grid>
 
-      {/* % Female-Headed Household */}
-      <Grid item xs={12} md={4} className={classes.item}>
-        <NumberInput
-          module={HOUSEHOLD_VALIDATION_MODULE_NAME}
-          label="filter.femaleHeadedPct"
-          max={100}
-          value={filters?.femaleHeadedPercentage}
-          onChange={ (value) => onChange('femaleHeadedPercentage')(value)}
-        />
-      </Grid>
-
-      {/* % Youths */}
-      <Grid item xs={12} md={4} className={classes.item}>
-        <NumberInput
-          module={HOUSEHOLD_VALIDATION_MODULE_NAME}
-          label="filter.youthPct"
-          max={100}
-          value={filters?.youthPercentage}
-          onChange={ (value) => onChange('youthPercentage')(value)}
-        />
-      </Grid>
-
-      {/* % Reserved */}
-      <Grid item xs={12} md={4} className={classes.item}>
-        <NumberInput
-          module={HOUSEHOLD_VALIDATION_MODULE_NAME}
-          label="filter.reservedPct"
-          max={100}
-          value={filters?.reservedPercentage}
-          onChange={ (value) => onChange('reservedPercentage')(value)}
-        />
-      </Grid>
-
-      {/* % Total Households Target */}
+      {/* Total Households Target */}
       <Grid item xs={12} md={4} className={classes.item}>
         <NumberInput
           module={HOUSEHOLD_VALIDATION_MODULE_NAME}
           label="filter.totalHouseholdsTarget"
+          min={1}
+          required
           value={filters?.targetCount}
           onChange={ (value) => onChange('targetCount')(value)}
         />
