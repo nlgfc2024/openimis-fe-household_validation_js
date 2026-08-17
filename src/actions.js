@@ -20,7 +20,10 @@ function buildGenerateValidationListFilters(filters) {
     lines.push(`districtCode: \"${formatGQLString(filters.district.code)}\"`);
   }
 
-  if (filters?.ta?.code) {
+  if (filters?.tas?.length) {
+    lines.push(`taCodes: ${JSON.stringify(filters.tas.map((ta) => ta.code))}`);
+  } else if (filters?.ta?.code) {
+    // Keep compatibility with filters saved before TA became multi-select.
     lines.push(`taCode: \"${formatGQLString(filters.ta.code)}\"`);
   }
 
@@ -30,6 +33,8 @@ function buildGenerateValidationListFilters(filters) {
 
   if (filters?.villages?.length) {
     lines.push(`villageCodes: ${JSON.stringify(filters.villages.map((v) => v.code))}`);
+  } else if (filters?.gvhs?.length) {
+    lines.push(`gvhCodes: ${JSON.stringify(filters.gvhs.map((gvh) => gvh.code))}`);
   }
 
   if (filters?.excludeVerifiedAfter) lines.push(`excludeVerifiedAfter: \"${formatGQLString(filters.excludeVerifiedAfter)}\"`);

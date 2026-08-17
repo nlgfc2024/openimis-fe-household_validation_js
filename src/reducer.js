@@ -58,6 +58,12 @@ function reducer(state = INITIAL_STATE, action) {
         generatedValidationLists: false,
         validationListResult: {},
         errorValidationLists: null,
+        fetchedValidationSummary: false,
+        validationSummary: {},
+        fetchedValidationPreview: false,
+        validationPreviewData: [],
+        validationPreviewPageInfo: {},
+        validationPreviewTotalCount: 0,
       };
 
     case SUCCESS(ACTION_TYPE.GENERATE_VALIDATION_LIST):
