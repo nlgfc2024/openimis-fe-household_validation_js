@@ -22,9 +22,13 @@ export const GENERATE_VALIDATION_LIST_RESULT_PROJECTION = [
   'batchId',
   'fileName',
   'fileBase64',
-  'householdsSelected',
-  'reserveHouseholds',
-  'memberRows',
+  'totalHouseholds',
+  'totalIndividuals',
+  'selectedHouseholds',
+  'selectedIndividuals',
+  'selectedFemaleHeadedHouseholds',
+  'selectedYouthHouseholds',
+  'reserveHouseholds'
 ];
 
 export const VALIDATION_PREVIEW_PROJECTION = [
@@ -60,17 +64,3 @@ export const UPLOAD_VALIDATION_LIST_RESULT_PROJECTION = [
   'errorMessages',
 ];
 
-export const VALIDATION_SUMMARY_PROJECTION = [
-  'totalHouseholds',
-  'totalIndividuals',
-  'eligibleHouseholds',
-  'eligibleIndividuals',
-  'selectedHouseholds',
-  'selectedIndividuals',
-  'selectedFemaleHeadedHouseholds',
-  'selectedYouthHouseholds',
-  'selectedOtherHouseholds',
-  'reserveHouseholds',
-  'mainHouseholds',
-  'generatedAt',
-];

@@ -10,8 +10,7 @@ import { REQUEST, SUCCESS, ERROR, CLEAR } from './util/action-type';
 import {
   GENERATE_VALIDATION_LIST_RESULT_PROJECTION,
   UPLOAD_VALIDATION_LIST_RESULT_PROJECTION,
-  VALIDATION_PREVIEW_PROJECTION,
-  VALIDATION_SUMMARY_PROJECTION,
+  VALIDATION_PREVIEW_PROJECTION
 } from './constants';
 
 function buildGenerateValidationListFilters(filters) {
@@ -98,17 +97,6 @@ export function uploadValidationList(fileBase64, sourceFileName) {
   );
 }
 
-export function fetchHouseholdValidationSummary(filters) {
-  const args = buildGenerateValidationListFilters(filters);
-  const payload = `
-    query {
-      householdValidationSummary${args.length ? `(${args.join(',')})` : ''} {
-        ${VALIDATION_SUMMARY_PROJECTION.join('\n')}
-      }
-    }`;
-  return graphql(payload, ACTION_TYPE.FETCH_VALIDATION_SUMMARY);
-}
-
 export function fetchHouseholdValidationPreview(filters, pageSize = 10, offset = 0) {
   const args = buildGenerateValidationListFilters(filters);
   args.push(`first: ${parseInt(pageSize, 10)}`, `offset: ${parseInt(offset, 10)}`);
@@ -122,10 +110,6 @@ export const clearValidationLists = () => (dispatch) => {
 
 export const clearUploadValidationList = () => (dispatch) => {
   dispatch({ type: CLEAR(ACTION_TYPE.UPLOAD_VALIDATION_LIST) });
-};
-
-export const clearValidationSummary = () => (dispatch) => {
-  dispatch({ type: CLEAR(ACTION_TYPE.FETCH_VALIDATION_SUMMARY) });
 };
 
 export const clearValidationPreview = () => (dispatch) => {
