@@ -42,6 +42,10 @@ const styles = (theme) => ({
     padding: theme.spacing(1),
   },
   title: theme.paper.title,
+  summaryContext: {
+    padding: theme.spacing(1),
+    fontWeight: 500,
+  },
 });
 
 function HouseholdValidationHeadPanel({
@@ -57,8 +61,14 @@ function HouseholdValidationHeadPanel({
   generateValidationList
 }) {
   const [showPreview, setShowPreview] = React.useState(false);
+  const [generatedCatchment, setGeneratedCatchment] = React.useState(null);
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
   const canGenerate = hasRequiredGenerationFilters(edited);
+
+  const handleGenerate = () => {
+    setGeneratedCatchment(edited?.microCatchment ?? null);
+    generateValidationList(edited);
+  };
 
   const exportToCSV = () => {
     const byteCharacters = atob(validationListResult.fileBase64);
@@ -94,7 +104,7 @@ function HouseholdValidationHeadPanel({
         <Button
           variant="contained"
           color="primary"
-          onClick={() => generateValidationList(edited)}
+          onClick={handleGenerate}
           disabled={generatingValidationLists || !canGenerate}
         >
           {generatingValidationLists
@@ -117,6 +127,11 @@ function HouseholdValidationHeadPanel({
           <Grid item xs={12} >
             <Typography className={classes.title}>
               {fm('generateValidationList.summaryTitle')}
+            </Typography>
+            <Typography className={classes.summaryContext} variant="subtitle1">
+              {fm('generateValidationList.catchment')}
+              {': '}
+              {generatedCatchment?.name ?? generatedCatchment?.code ?? '-'}
             </Typography>
           </Grid>
 

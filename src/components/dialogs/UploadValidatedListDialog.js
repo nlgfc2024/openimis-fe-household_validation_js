@@ -27,6 +27,7 @@ const RESULT_FIELDS = [
   'householdsVerified',
   'householdsNotVerified',
   'participantUpdates',
+  'householdsWithMultiplePrimaryWorkers',
   'errors',
 ];
 

@@ -28,7 +28,18 @@ export const GENERATE_VALIDATION_LIST_RESULT_PROJECTION = [
   'selectedIndividuals',
   'selectedFemaleHeadedHouseholds',
   'selectedYouthHouseholds',
-  'reserveHouseholds'
+  'reserveHouseholds',
+  `villageBreakdown {
+    villageId
+    villageCode
+    villageName
+    eligibleHouseholds
+    exactAllocation
+    allocatedHouseholds
+    selectedHouseholds
+    selectedIndividuals
+    reserveHouseholds
+  }`,
 ];
 
 export const VALIDATION_PREVIEW_PROJECTION = [
@@ -60,7 +71,7 @@ export const UPLOAD_VALIDATION_LIST_RESULT_PROJECTION = [
   'householdsVerified',
   'householdsNotVerified',
   'participantUpdates',
+  'householdsWithMultiplePrimaryWorkers',
   'errors',
   'errorMessages',
 ];
-

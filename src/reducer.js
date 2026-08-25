@@ -117,7 +117,7 @@ function reducer(state = INITIAL_STATE, action) {
         validationUploadResult: {},
         errorValidationUpload: null,
       };
-      
+
     // -------- FETCH VALIDATION PREVIEW QUERY --------
     case REQUEST(ACTION_TYPE.FETCH_VALIDATION_PREVIEW):
       return {
