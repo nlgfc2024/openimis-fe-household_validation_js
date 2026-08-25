@@ -10,7 +10,7 @@ import { REQUEST, SUCCESS, ERROR, CLEAR } from './util/action-type';
 import {
   GENERATE_VALIDATION_LIST_RESULT_PROJECTION,
   UPLOAD_VALIDATION_LIST_RESULT_PROJECTION,
-  VALIDATION_PREVIEW_PROJECTION
+  VALIDATION_PREVIEW_PROJECTION,
 } from './constants';
 
 function buildGenerateValidationListFilters(filters) {
