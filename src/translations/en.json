@@ -51,8 +51,12 @@
   "uploadValidationList.householdsVerified": "Households Verified",
   "uploadValidationList.householdsNotVerified": "Households Not Verified",
   "uploadValidationList.participantUpdates": "Participant Updates",
-  "uploadValidationList.householdsWithMultiplePrimaryWorkers": "Rejected",
+  "uploadValidationList.householdsWithMultiplePrimaryWorkers": "Rejected Households",
   "uploadValidationList.errors": "Errors",
+  "uploadValidationList.downloadRejectedHouseholds": "Download Rejected Households",
+  "uploadValidationList.preparingRejectedHouseholdsDownload": "Preparing Download...",
+  "uploadValidationList.rejectedHouseholdsDownloadFailed.header": "Download Failed",
+  "uploadValidationList.rejectedHouseholdsDownloadFailed.message": "Unable to download rejected households.",
   "uploadValidationList.invalidFormat.header": "Invalid File Format",
   "uploadValidationList.invalidFormat.message": "Please attach the validated list as an .xlsx file.",
 

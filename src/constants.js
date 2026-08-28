@@ -67,6 +67,8 @@ export const VALIDATION_PREVIEW_PROJECTION = [
 ];
 
 export const UPLOAD_VALIDATION_LIST_RESULT_PROJECTION = [
+  'batchId',
+  'uploadAttemptId',
   'rowsRead',
   'householdsVerified',
   'householdsNotVerified',

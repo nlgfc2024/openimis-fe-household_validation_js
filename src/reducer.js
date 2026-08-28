@@ -14,6 +14,8 @@ export const ACTION_TYPE = {
   GENERATE_VALIDATION_LIST: 'GENERATE_VALIDATION_LIST',
   // Upload validated list mutation
   UPLOAD_VALIDATION_LIST: 'UPLOAD_VALIDATION_LIST',
+  // Fetch rejected households for an uploaded batch
+  FETCH_REJECTED_HOUSEHOLDS: 'FETCH_REJECTED_HOUSEHOLDS',
   // Fetch validation preview query
   FETCH_VALIDATION_PREVIEW: 'FETCH_VALIDATION_PREVIEW',
 };
@@ -30,6 +32,13 @@ const INITIAL_STATE = {
   uploadedValidationList: false,
   validationUploadResult: {},
   errorValidationUpload: null,
+
+  // Rejected households
+  fetchingRejectedHouseholds: false,
+  fetchedRejectedHouseholds: false,
+  rejectedHouseholdsFileName: null,
+  rejectedHouseholdsFileBase64: null,
+  errorRejectedHouseholds: null,
 
   // Validation preview
   fetchingValidationPreview: false,
@@ -91,6 +100,11 @@ function reducer(state = INITIAL_STATE, action) {
         uploadedValidationList: false,
         validationUploadResult: {},
         errorValidationUpload: null,
+        fetchingRejectedHouseholds: false,
+        fetchedRejectedHouseholds: false,
+        rejectedHouseholdsFileName: null,
+        rejectedHouseholdsFileBase64: null,
+        errorRejectedHouseholds: null,
       };
 
     case SUCCESS(ACTION_TYPE.UPLOAD_VALIDATION_LIST):
@@ -116,6 +130,46 @@ function reducer(state = INITIAL_STATE, action) {
         uploadedValidationList: false,
         validationUploadResult: {},
         errorValidationUpload: null,
+      };
+
+    // -------- REJECTED HOUSEHOLDS QUERY --------
+    case REQUEST(ACTION_TYPE.FETCH_REJECTED_HOUSEHOLDS):
+      return {
+        ...state,
+        fetchingRejectedHouseholds: true,
+        fetchedRejectedHouseholds: false,
+        rejectedHouseholdsFileName: null,
+        rejectedHouseholdsFileBase64: null,
+        errorRejectedHouseholds: null,
+      };
+
+    case SUCCESS(ACTION_TYPE.FETCH_REJECTED_HOUSEHOLDS): {
+      const rejectedHouseholds = action.payload.data?.householdValidationRejectedBatchRows;
+      return {
+        ...state,
+        fetchingRejectedHouseholds: false,
+        fetchedRejectedHouseholds: true,
+        rejectedHouseholdsFileName: rejectedHouseholds?.fileName ?? null,
+        rejectedHouseholdsFileBase64: rejectedHouseholds?.fileBase64 ?? null,
+        errorRejectedHouseholds: formatGraphQLError(action.payload),
+      };
+    }
+
+    case ERROR(ACTION_TYPE.FETCH_REJECTED_HOUSEHOLDS):
+      return {
+        ...state,
+        fetchingRejectedHouseholds: false,
+        errorRejectedHouseholds: formatServerError(action.payload),
+      };
+
+    case CLEAR(ACTION_TYPE.FETCH_REJECTED_HOUSEHOLDS):
+      return {
+        ...state,
+        fetchingRejectedHouseholds: false,
+        fetchedRejectedHouseholds: false,
+        rejectedHouseholdsFileName: null,
+        rejectedHouseholdsFileBase64: null,
+        errorRejectedHouseholds: null,
       };
 
     // -------- FETCH VALIDATION PREVIEW QUERY --------
