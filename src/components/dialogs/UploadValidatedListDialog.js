@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { injectIntl } from 'react-intl';
 import {
   Button,
@@ -20,7 +20,12 @@ import {
   HOUSEHOLD_VALIDATION_MODULE_NAME,
   RIGHT_HOUSEHOLD_VALIDATION_UPLOAD,
 } from '../../constants';
-import { uploadValidationList, clearUploadValidationList } from '../../actions';
+import {
+  clearRejectedHouseholds,
+  clearUploadValidationList,
+  fetchRejectedHouseholds,
+  uploadValidationList,
+} from '../../actions';
 
 const RESULT_FIELDS = [
   'rowsRead',
@@ -34,8 +39,8 @@ const RESULT_FIELDS = [
 const styles = (theme) => ({
   item: theme.paper.item,
   dialogPaper: {
-    width: 600,
-    maxWidth: 800,
+    width: 800,
+    maxWidth: 900,
   },
   divider: {
     margin: theme.spacing(1, 0),
@@ -89,6 +94,32 @@ const readFileAsBase64 = (file) => new Promise((resolve, reject) => {
 const isXlsxFile = (file) => file.name?.toLowerCase().endsWith('.xlsx')
   || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
+const downloadRejectedHouseholds = (fileBase64, fileName) => {
+  if (!fileBase64) return false;
+  try {
+    const byteCharacters = atob(fileBase64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let index = 0; index < byteCharacters.length; index += 1) {
+      byteNumbers[index] = byteCharacters.charCodeAt(index);
+    }
+    const blob = new Blob(
+      [new Uint8Array(byteNumbers)],
+      { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+    );
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName ?? 'rejected_households.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 function UploadValidatedListDialog({
   intl,
   classes,
@@ -98,22 +129,30 @@ function UploadValidatedListDialog({
   uploadedValidationList,
   validationUploadResult,
   errorValidationUpload,
+  fetchingRejectedHouseholds,
+  fetchedRejectedHouseholds,
+  rejectedHouseholdsFileName,
+  rejectedHouseholdsFileBase64,
+  errorRejectedHouseholds,
   // Actions
   uploadValidationList,
   clearUploadValidationList,
+  fetchRejectedHouseholds,
+  clearRejectedHouseholds,
   coreAlert,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState(null);
   const [submitted, setSubmitted] = useState(false);
+  const [downloadRequested, setDownloadRequested] = useState(false);
 
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
 
-  if (!rights.includes(RIGHT_HOUSEHOLD_VALIDATION_UPLOAD)) return null;
-
   const resetResult = () => {
     setSubmitted(false);
+    setDownloadRequested(false);
     clearUploadValidationList();
+    clearRejectedHouseholds();
   };
 
   const handleOpen = () => setIsOpen(true);
@@ -144,9 +183,86 @@ function UploadValidatedListDialog({
     uploadValidationList(fileBase64, file.name);
   };
 
+  const onDownloadRejectedHouseholds = () => {
+    if (fetchedRejectedHouseholds && rejectedHouseholdsFileBase64) {
+      const downloaded = downloadRejectedHouseholds(
+        rejectedHouseholdsFileBase64,
+        rejectedHouseholdsFileName,
+      );
+      if (!downloaded) {
+        coreAlert(
+          fm('uploadValidationList.rejectedHouseholdsDownloadFailed.header'),
+          fm('uploadValidationList.rejectedHouseholdsDownloadFailed.message'),
+        );
+      }
+      return;
+    }
+    setDownloadRequested(true);
+    fetchRejectedHouseholds(
+      validationUploadResult.batchId,
+      validationUploadResult.uploadAttemptId,
+    );
+  };
+
+  useEffect(() => {
+    if (!downloadRequested || !fetchedRejectedHouseholds) return;
+    const downloaded = downloadRejectedHouseholds(
+      rejectedHouseholdsFileBase64,
+      rejectedHouseholdsFileName,
+    );
+    if (!downloaded && !errorRejectedHouseholds) {
+      coreAlert(
+        formatMessage(
+          intl,
+          HOUSEHOLD_VALIDATION_MODULE_NAME,
+          'uploadValidationList.rejectedHouseholdsDownloadFailed.header',
+        ),
+        formatMessage(
+          intl,
+          HOUSEHOLD_VALIDATION_MODULE_NAME,
+          'uploadValidationList.rejectedHouseholdsDownloadFailed.message',
+        ),
+      );
+    }
+    setDownloadRequested(false);
+  }, [
+    downloadRequested,
+    fetchedRejectedHouseholds,
+    rejectedHouseholdsFileBase64,
+    rejectedHouseholdsFileName,
+    errorRejectedHouseholds,
+    coreAlert,
+    intl,
+  ]);
+
+  useEffect(() => {
+    if (downloadRequested && errorRejectedHouseholds) {
+      coreAlert(
+        formatMessage(
+          intl,
+          HOUSEHOLD_VALIDATION_MODULE_NAME,
+          'uploadValidationList.rejectedHouseholdsDownloadFailed.header',
+        ),
+        errorRejectedHouseholds?.message
+          ?? formatMessage(
+            intl,
+            HOUSEHOLD_VALIDATION_MODULE_NAME,
+            'uploadValidationList.rejectedHouseholdsDownloadFailed.message',
+          ),
+      );
+      setDownloadRequested(false);
+    }
+  }, [downloadRequested, errorRejectedHouseholds, coreAlert, intl]);
+
   const showResult = submitted && uploadedValidationList
     && !uploadingValidationList && !errorValidationUpload;
   const showError = submitted && !!errorValidationUpload;
+  const canDownloadRejectedHouseholds = showResult
+    && validationUploadResult?.householdsWithMultiplePrimaryWorkers > 0
+    && validationUploadResult?.batchId
+    && validationUploadResult?.uploadAttemptId;
+
+  if (!rights.includes(RIGHT_HOUSEHOLD_VALIDATION_UPLOAD)) return null;
 
   return (
     <>
@@ -235,16 +351,30 @@ function UploadValidatedListDialog({
             </Button>
           </div>
           <div className={classes.actionsRight}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={onSubmit}
-              disabled={!file || uploadingValidationList}
-            >
-              {uploadingValidationList
-                ? fm('uploadValidationList.uploading')
-                : fm('uploadValidationList.upload')}
-            </Button>
+            {canDownloadRejectedHouseholds && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={onDownloadRejectedHouseholds}
+                disabled={fetchingRejectedHouseholds}
+              >
+                {fetchingRejectedHouseholds && downloadRequested
+                  ? fm('uploadValidationList.preparingRejectedHouseholdsDownload')
+                  : fm('uploadValidationList.downloadRejectedHouseholds')}
+              </Button>
+            )}
+            {!showResult && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={onSubmit}
+                disabled={!file || uploadingValidationList}
+              >
+                {uploadingValidationList
+                  ? fm('uploadValidationList.uploading')
+                  : fm('uploadValidationList.upload')}
+              </Button>
+            )}
           </div>
         </DialogActions>
       </Dialog>
@@ -258,11 +388,18 @@ const mapStateToProps = (state) => ({
   uploadedValidationList: state.householdValidation?.uploadedValidationList,
   validationUploadResult: state.householdValidation?.validationUploadResult ?? {},
   errorValidationUpload: state.householdValidation?.errorValidationUpload,
+  fetchingRejectedHouseholds: state.householdValidation?.fetchingRejectedHouseholds,
+  fetchedRejectedHouseholds: state.householdValidation?.fetchedRejectedHouseholds,
+  rejectedHouseholdsFileName: state.householdValidation?.rejectedHouseholdsFileName,
+  rejectedHouseholdsFileBase64: state.householdValidation?.rejectedHouseholdsFileBase64,
+  errorRejectedHouseholds: state.householdValidation?.errorRejectedHouseholds,
 });
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
   uploadValidationList,
   clearUploadValidationList,
+  fetchRejectedHouseholds,
+  clearRejectedHouseholds,
   coreAlert,
 }, dispatch);
 

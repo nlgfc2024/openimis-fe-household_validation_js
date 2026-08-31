@@ -97,6 +97,28 @@ export function uploadValidationList(fileBase64, sourceFileName) {
   );
 }
 
+export function fetchRejectedHouseholds(batchId, uploadAttemptId) {
+  const payload = `
+    query {
+      householdValidationRejectedBatchRows(
+        batchId: "${formatGQLString(batchId)}"
+        uploadAttemptId: "${formatGQLString(uploadAttemptId)}"
+      ) {
+        fileName
+        fileBase64
+      }
+    }`;
+  const requestedDateTime = new Date();
+  return graphql(
+    payload,
+    [REQUEST(ACTION_TYPE.FETCH_REJECTED_HOUSEHOLDS), SUCCESS(ACTION_TYPE.FETCH_REJECTED_HOUSEHOLDS), ERROR(ACTION_TYPE.FETCH_REJECTED_HOUSEHOLDS)],
+    {
+      actionType: ACTION_TYPE.FETCH_REJECTED_HOUSEHOLDS,
+      requestedDateTime,
+    },
+  );
+}
+
 export function fetchHouseholdValidationPreview(filters, pageSize = 10, offset = 0) {
   const args = buildGenerateValidationListFilters(filters);
   args.push(`first: ${parseInt(pageSize, 10)}`, `offset: ${parseInt(offset, 10)}`);
@@ -110,6 +132,10 @@ export const clearValidationLists = () => (dispatch) => {
 
 export const clearUploadValidationList = () => (dispatch) => {
   dispatch({ type: CLEAR(ACTION_TYPE.UPLOAD_VALIDATION_LIST) });
+};
+
+export const clearRejectedHouseholds = () => (dispatch) => {
+  dispatch({ type: CLEAR(ACTION_TYPE.FETCH_REJECTED_HOUSEHOLDS) });
 };
 
 export const clearValidationPreview = () => (dispatch) => {
