@@ -32,7 +32,7 @@ const RESULT_FIELDS = [
   'householdsVerified',
   'householdsNotVerified',
   'participantUpdates',
-  'householdsWithMultiplePrimaryWorkers',
+  'totalRejectedHouseholds',
   'errors',
 ];
 
@@ -258,7 +258,10 @@ function UploadValidatedListDialog({
     && !uploadingValidationList && !errorValidationUpload;
   const showError = submitted && !!errorValidationUpload;
   const canDownloadRejectedHouseholds = showResult
-    && validationUploadResult?.householdsWithMultiplePrimaryWorkers > 0
+    && (
+      validationUploadResult?.totalRejectedHouseholds > 0
+      || validationUploadResult?.householdsWithMultiplePrimaryWorkers > 0
+    )
     && validationUploadResult?.batchId
     && validationUploadResult?.uploadAttemptId;
 
@@ -309,6 +312,20 @@ function UploadValidatedListDialog({
                     </Typography>
                   </div>
                 ))}
+                {!!validationUploadResult?.rejectedHouseholdsBreakdown?.length && (
+                  <div>
+                    {validationUploadResult.rejectedHouseholdsBreakdown.map((item) => (
+                      <div key={item.code} className={classes.resultRow}>
+                        <Typography variant="body2" color="textSecondary">
+                          {item.reason}
+                        </Typography>
+                        <Typography variant="body2">
+                          {item.householdCount?.toLocaleString() ?? 0}
+                        </Typography>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {!!validationUploadResult?.errorMessages?.length && (
                   <div className={classes.errorList}>
                     {validationUploadResult.errorMessages.map((message, idx) => (

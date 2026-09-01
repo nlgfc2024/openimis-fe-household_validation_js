@@ -52,6 +52,7 @@
   "uploadValidationList.householdsNotVerified": "Households Not Verified",
   "uploadValidationList.participantUpdates": "Participant Updates",
   "uploadValidationList.householdsWithMultiplePrimaryWorkers": "Rejected Households",
+  "uploadValidationList.totalRejectedHouseholds": "Rejected Households",
   "uploadValidationList.errors": "Errors",
   "uploadValidationList.downloadRejectedHouseholds": "Download Rejected Households",
   "uploadValidationList.preparingRejectedHouseholdsDownload": "Preparing Download...",
