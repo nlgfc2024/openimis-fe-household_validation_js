@@ -74,6 +74,8 @@ export const UPLOAD_VALIDATION_LIST_RESULT_PROJECTION = [
   'householdsNotVerified',
   'participantUpdates',
   'householdsWithMultiplePrimaryWorkers',
+  'totalRejectedHouseholds',
+  'rejectedHouseholdsBreakdown { code reason householdCount }',
   'errors',
   'errorMessages',
 ];
