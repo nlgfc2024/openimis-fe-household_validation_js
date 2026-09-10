@@ -1,0 +1,30 @@
+{
+  "extends": ["airbnb"],
+  "env": {
+    "browser": true,
+    "es6": true
+  },
+  "plugins": [
+    "react"
+  ],
+  "settings": {
+    "react": {
+      "version": "16.13"
+    }
+  },
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module"
+  },
+  "rules": {
+    "import/no-unresolved": 0,
+    "import/prefer-default-export": 0,
+    "max-len": 0,
+    "no-plusplus": 0,
+    "no-shadow": 0,
+    "react/jsx-filename-extension": 0,
+    "react/prop-types": 0,
+    "space-before-function-paren": 0,
+    "react/jsx-boolean-value": 0
+  }
+}
