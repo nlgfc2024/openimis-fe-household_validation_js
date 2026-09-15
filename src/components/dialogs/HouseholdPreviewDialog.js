@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
 } from '@material-ui/core';
 import { withStyles, withTheme } from '@material-ui/core/styles';
 import { formatMessage, withModulesManager } from '@openimis/fe-core';

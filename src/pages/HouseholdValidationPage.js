@@ -3,8 +3,6 @@ import { connect } from 'react-redux';
 import {
   Form,
   useHistory,
-  useModulesManager,
-  useTranslations,
 } from '@openimis/fe-core';
 import {
   RIGHT_HOUSEHOLD_VALIDATION_SEARCH,
@@ -13,9 +11,7 @@ import {
 import HouseholdValidationHeadPanel from '../components/HouseholdValidationHeadPanel';
 
 function HouseholdValidationPage({ rights }) {
-  const modulesManager = useModulesManager();
   const history = useHistory();
-  const { formatMessage } = useTranslations(HOUSEHOLD_VALIDATION_MODULE_NAME, modulesManager);
 
   const [filters, setFilters] = useState({});
 
@@ -45,4 +41,3 @@ const mapStateToProps = (state) => ({
 });
 
 export default connect(mapStateToProps)(HouseholdValidationPage);
-

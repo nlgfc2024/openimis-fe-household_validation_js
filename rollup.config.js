@@ -23,6 +23,7 @@ export default {
     /^@openimis.*/,
     "classnames",
     "clsx",
+    "flat",
     "history",
     /^lodash.*/,
     "moment",
