@@ -6,7 +6,9 @@ import {
   formatPageQueryWithCount,
 } from '@openimis/fe-core';
 import { ACTION_TYPE } from './reducer';
-import { REQUEST, SUCCESS, ERROR, CLEAR } from './util/action-type';
+import {
+  REQUEST, SUCCESS, ERROR, CLEAR,
+} from './util/action-type';
 import {
   GENERATE_VALIDATION_LIST_RESULT_PROJECTION,
   UPLOAD_VALIDATION_LIST_RESULT_PROJECTION,
@@ -16,25 +18,25 @@ import {
 function buildGenerateValidationListFilters(filters) {
   const lines = [];
   if (filters?.district?.code) {
-    lines.push(`districtCode: \"${formatGQLString(filters.district.code)}\"`);
+    lines.push(`districtCode: "${formatGQLString(filters.district.code)}"`);
   }
 
   if (filters?.tas?.length) {
     lines.push(`taCodes: ${JSON.stringify(filters.tas.map((ta) => ta.code))}`);
   } else if (filters?.ta?.code) {
     // Keep compatibility with filters saved before TA became multi-select.
-    lines.push(`taCode: \"${formatGQLString(filters.ta.code)}\"`);
+    lines.push(`taCode: "${formatGQLString(filters.ta.code)}"`);
   }
 
   if (filters?.microCatchment?.code) {
-    lines.push(`catchmentCode: \"${formatGQLString(filters.microCatchment.code)}\"`);
+    lines.push(`catchmentCode: "${formatGQLString(filters.microCatchment.code)}"`);
   }
   if (filters?.microCatchment?.uuid) {
-    lines.push(`catchmentId: \"${formatGQLString(filters.microCatchment.uuid)}\"`);
+    lines.push(`catchmentId: "${formatGQLString(filters.microCatchment.uuid)}"`);
   }
 
   if (filters?.hotspot?.code) {
-    lines.push(`hotspotCode: \"${formatGQLString(filters.hotspot.code)}\"`);
+    lines.push(`hotspotCode: "${formatGQLString(filters.hotspot.code)}"`);
   }
 
   if (filters?.villages?.length) {
@@ -43,7 +45,7 @@ function buildGenerateValidationListFilters(filters) {
     lines.push(`gvhCodes: ${JSON.stringify(filters.gvhs.map((gvh) => gvh.code))}`);
   }
 
-  if (filters?.excludeVerifiedAfter) lines.push(`excludeVerifiedAfter: \"${formatGQLString(filters.excludeVerifiedAfter)}\"`);
+  if (filters?.excludeVerifiedAfter) lines.push(`excludeVerifiedAfter: "${formatGQLString(filters.excludeVerifiedAfter)}"`);
 
   if (filters?.targetCount !== null && filters?.targetCount !== undefined) {
     lines.push(`targetCount: ${parseInt(filters.targetCount, 10)}`);

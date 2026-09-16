@@ -58,7 +58,7 @@ function HouseholdValidationHeadPanel({
   generatedValidationLists,
   validationListResult,
   // Actions
-  generateValidationList
+  generateValidationList,
 }) {
   const [showPreview, setShowPreview] = React.useState(false);
   const [generatedCatchment, setGeneratedCatchment] = React.useState(null);
@@ -124,7 +124,7 @@ function HouseholdValidationHeadPanel({
           <Grid item xs={12} className={classes.item}>
             <Divider className={classes.divider} />
           </Grid>
-          <Grid item xs={12} >
+          <Grid item xs={12}>
             <Typography className={classes.title}>
               {fm('generateValidationList.summaryTitle')}
             </Typography>
@@ -268,7 +268,7 @@ const mapStateToProps = (state) => ({
 });
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
-  generateValidationList
+  generateValidationList,
 }, dispatch);
 
 export default withModulesManager(

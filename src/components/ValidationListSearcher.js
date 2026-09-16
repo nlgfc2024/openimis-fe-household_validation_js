@@ -3,7 +3,6 @@ import { injectIntl } from 'react-intl';
 import {
   Searcher,
   formatMessageWithValues,
-  useModulesManager,
 } from '@openimis/fe-core';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
@@ -53,8 +52,6 @@ function ValidationListSearcher({
   fetchedValidationPreview,
   fetchHouseholdValidationPreview,
 }) {
-  const modulesManager = useModulesManager();
-
   // ---- headers ----
   const headers = () => [
     'member.firstName',

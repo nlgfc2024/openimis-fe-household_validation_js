@@ -10,7 +10,7 @@ import {
   Grid,
   Input,
   Typography,
-  MenuItem
+  MenuItem,
 } from '@material-ui/core';
 import { withStyles, withTheme } from '@material-ui/core/styles';
 import { formatMessage, coreAlert } from '@openimis/fe-core';
@@ -29,10 +29,13 @@ import {
 
 const RESULT_FIELDS = [
   'rowsRead',
+  'participantsVerified',
+  'participantsNotVerified',
+  'participantsRejected',
   'householdsVerified',
   'householdsNotVerified',
-  'participantUpdates',
   'householdsWithMultiplePrimaryWorkers',
+  'participantUpdates',
   'errors',
 ];
 

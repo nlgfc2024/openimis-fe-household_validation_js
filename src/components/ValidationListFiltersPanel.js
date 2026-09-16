@@ -204,7 +204,7 @@ function ValidationListFiltersPanel({
           min={1}
           required
           value={filters?.targetCount}
-          onChange={ (value) => onChange('targetCount')(value)}
+          onChange={(value) => onChange('targetCount')(value)}
         />
       </Grid>
     </Grid>
