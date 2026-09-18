@@ -16,9 +16,6 @@ export const CONTAINS_LOOKUP = 'Icontains';
 export const DEFAULT_DEBOUNCE_TIME = 500;
 export const EMPTY_STRING = '';
 
-// Filters that must be set before a validation list can be generated
-export const REQUIRED_GENERATION_FILTERS = ['district', 'microCatchment'];
-
 export const GENERATE_VALIDATION_LIST_RESULT_PROJECTION = [
   'batchId',
   'fileName',
