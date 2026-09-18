@@ -19,6 +19,7 @@ import ValidationListFiltersPanel from './ValidationListFiltersPanel';
 import HouseholdPreviewDialog from './dialogs/HouseholdPreviewDialog';
 import { HOUSEHOLD_VALIDATION_MODULE_NAME } from '../constants';
 import { hasRequiredGenerationFilters } from '../util/filters';
+import { getValidationListFiltersConfig, resolveActiveFilterSet } from '../util/validationFilters';
 import { generateValidationList } from '../actions';
 
 const styles = (theme) => ({
@@ -53,6 +54,7 @@ function HouseholdValidationHeadPanel({
   classes,
   edited,
   onEditedChanged,
+  modulesManager,
   // Generate mutation state
   generatingValidationLists,
   generatedValidationLists,
@@ -63,7 +65,9 @@ function HouseholdValidationHeadPanel({
   const [showPreview, setShowPreview] = React.useState(false);
   const [generatedCatchment, setGeneratedCatchment] = React.useState(null);
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
-  const canGenerate = hasRequiredGenerationFilters(edited);
+  const filtersConfig = getValidationListFiltersConfig(modulesManager);
+  const { requiredFilters } = resolveActiveFilterSet(filtersConfig, edited?.program);
+  const canGenerate = hasRequiredGenerationFilters(edited, requiredFilters);
 
   const handleGenerate = () => {
     setGeneratedCatchment(edited?.microCatchment ?? null);
@@ -96,6 +100,7 @@ function HouseholdValidationHeadPanel({
           intl={intl}
           filters={edited}
           onChangeFilters={onEditedChanged}
+          modulesManager={modulesManager}
         />
       </Grid>
 
