@@ -1,5 +1,6 @@
 export const HOUSEHOLD_VALIDATION_MODULE_NAME = 'householdValidation';
 export const HOUSEHOLD_VALIDATION_MAIN_MENU_CONTRIBUTION_KEY = 'householdValidation.MainMenu';
+export const HOUSEHOLD_VALIDATION_CONFIG_MODULE_NAME = 'fe-household_validation';
 // Actions slot rendered in the header of the individual module's GroupSearcher
 export const INDIVIDUAL_GROUP_MENU_CONTRIBUTION_KEY = 'individual.group.GroupMenu';
 
