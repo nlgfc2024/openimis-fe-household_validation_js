@@ -21,6 +21,10 @@ function buildGenerateValidationListFilters(filters) {
     lines.push(`districtCode: "${formatGQLString(filters.district.code)}"`);
   }
 
+  if (filters?.program?.code) {
+    lines.push(`benefitPlanCode: "${formatGQLString(filters.program.code)}"`);
+  }
+
   if (filters?.tas?.length) {
     lines.push(`taCodes: ${JSON.stringify(filters.tas.map((ta) => ta.code))}`);
   } else if (filters?.ta?.code) {
