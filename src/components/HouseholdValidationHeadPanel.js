@@ -12,6 +12,7 @@ import { withTheme, withStyles } from '@material-ui/core/styles';
 import {
   withModulesManager,
   formatMessage,
+  WarningBox,
 } from '@openimis/fe-core';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
@@ -64,10 +65,16 @@ function HouseholdValidationHeadPanel({
 }) {
   const [showPreview, setShowPreview] = React.useState(false);
   const [generatedCatchment, setGeneratedCatchment] = React.useState(null);
+  const [filtersTouched, setFiltersTouched] = React.useState(false);
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
   const filtersConfig = getValidationListFiltersConfig(modulesManager);
   const { requiredFilters, programUnmatched } = resolveActiveFilterSet(filtersConfig, edited?.program);
   const canGenerate = !programUnmatched && hasRequiredGenerationFilters(edited, requiredFilters);
+
+  const handleFiltersChange = (newFilters) => {
+    setFiltersTouched(true);
+    onEditedChanged(newFilters);
+  };
 
   const handleGenerate = () => {
     setGeneratedCatchment(edited?.microCatchment ?? null);
@@ -99,30 +106,37 @@ function HouseholdValidationHeadPanel({
         <ValidationListFiltersPanel
           intl={intl}
           filters={edited}
-          onChangeFilters={onEditedChanged}
+          onChangeFilters={handleFiltersChange}
           modulesManager={modulesManager}
         />
+        {filtersTouched && !canGenerate && (
+          <WarningBox
+            title={fm(programUnmatched
+              ? 'generateValidationList.unmatchedProgramFiltersTitle'
+              : 'generateValidationList.missingRequiredFiltersTitle')}
+            description={fm(programUnmatched
+              ? 'generateValidationList.unmatchedProgramFilters'
+              : 'generateValidationList.missingRequiredFilters')}
+          />
+        )}
       </Grid>
 
       {/* ── Generate button ── */}
       <Grid item xs={12} className={classes.item}>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleGenerate}
-          disabled={generatingValidationLists || !canGenerate}
-        >
-          {generatingValidationLists
-            ? fm('generateValidationList.generatingButton')
-            : fm('generateValidationList.generateButton')}
-        </Button>
-        {!canGenerate && (
-          <Typography variant="body2" color="textSecondary">
-            {programUnmatched
-              ? fm('generateValidationList.unmatchedProgramFilters')
-              : fm('generateValidationList.missingRequiredFilters')}
-          </Typography>
-        )}
+        <Grid container alignItems="center">
+          <Grid item>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleGenerate}
+              disabled={generatingValidationLists || !canGenerate}
+            >
+              {generatingValidationLists
+                ? fm('generateValidationList.generatingButton')
+                : fm('generateValidationList.generateButton')}
+            </Button>
+          </Grid>
+        </Grid>
       </Grid>
 
       {/* ── Validation List Results Summary (only after list generation) ── */}
