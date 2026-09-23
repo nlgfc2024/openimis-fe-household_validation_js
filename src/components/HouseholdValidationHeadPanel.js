@@ -66,8 +66,8 @@ function HouseholdValidationHeadPanel({
   const [generatedCatchment, setGeneratedCatchment] = React.useState(null);
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
   const filtersConfig = getValidationListFiltersConfig(modulesManager);
-  const { requiredFilters } = resolveActiveFilterSet(filtersConfig, edited?.program);
-  const canGenerate = hasRequiredGenerationFilters(edited, requiredFilters);
+  const { requiredFilters, programUnmatched } = resolveActiveFilterSet(filtersConfig, edited?.program);
+  const canGenerate = !programUnmatched && hasRequiredGenerationFilters(edited, requiredFilters);
 
   const handleGenerate = () => {
     setGeneratedCatchment(edited?.microCatchment ?? null);
@@ -118,7 +118,9 @@ function HouseholdValidationHeadPanel({
         </Button>
         {!canGenerate && (
           <Typography variant="body2" color="textSecondary">
-            {fm('generateValidationList.missingRequiredFilters')}
+            {programUnmatched
+              ? fm('generateValidationList.unmatchedProgramFilters')
+              : fm('generateValidationList.missingRequiredFilters')}
           </Typography>
         )}
       </Grid>
