@@ -14,13 +14,13 @@ export const getValidationListFiltersConfig = (modulesManager) => modulesManager
 ) ?? DEFAULT_VALIDATION_LIST_FILTERS_CONFIG;
 
 const matchProgram = (program, programs) => {
-  const name = program?.name?.toUpperCase() ?? '';
-  return programs.find((candidate) => name.includes(String(candidate?.match ?? '').toUpperCase())) ?? null;
+  const code = program?.code?.toUpperCase() ?? '';
+  return programs.find((p) => p?.match?.toUpperCase() === code) ?? null;
 };
 
 // Resolves which filters should be shown/required for the current selection.
 // When the config defines "programs", a Program picker is shown and the active
-// location filters depend on which program (e.g. RMEP vs UPG) is selected.
+// location filters depend on which program is selected.
 export const resolveActiveFilterSet = (config, program) => {
   const programs = config?.programs ?? [];
   if (programs.length > 0) {
