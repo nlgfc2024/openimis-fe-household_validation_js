@@ -21,6 +21,8 @@ Register the module in the shell app's `openimis-fe_js/src/modules.js` (and `ope
 
 The filter panel is entirely config-driven via `validationListFilters`, read from this module's `ModuleConfiguration` (`modulesManager.getConf('fe-household_validation', 'validationListFilters', ...)`). A deployment that doesn't set this config gets the built-in default below (PWP: a fixed location hierarchy, no Program picker).
 
+A deployment's override is shallow-merged with the default (`getValidationListFiltersConfig`), so a partial override only needs to specify the top-level keys (`filters`, `requiredFilters`, `programs`) it actually wants to change — an omitted key falls back to the default rather than being silently treated as empty. To deliberately make no filters required, set `requiredFilters: []` explicitly; that's honored as-is, distinct from leaving the key out.
+
 ### Default config (no `ModuleConfiguration` override)
 
 ```js
