@@ -29,15 +29,18 @@ export const resolveActiveFilterSet = (config, program) => {
   const programs = config?.programs ?? [];
   if (programs.length > 0) {
     const matched = matchProgram(program, programs);
+    const programUnmatched = !!program && !matched;
     const requiredFilters = matched?.requiredFilters ?? config?.requiredFilters ?? [];
     return {
       showProgramPicker: true,
+      programUnmatched,
       filters: matched?.filters ?? [],
       requiredFilters: ['program', ...requiredFilters],
     };
   }
   return {
     showProgramPicker: false,
+    programUnmatched: false,
     filters: config?.filters ?? [],
     requiredFilters: config?.requiredFilters ?? [],
   };
