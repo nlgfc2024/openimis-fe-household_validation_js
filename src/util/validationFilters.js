@@ -7,11 +7,15 @@ export const DEFAULT_VALIDATION_LIST_FILTERS_CONFIG = {
   requiredFilters: ['district', 'microCatchment', 'targetCount'],
 };
 
-export const getValidationListFiltersConfig = (modulesManager) => modulesManager?.getConf(
-  HOUSEHOLD_VALIDATION_CONFIG_MODULE_NAME,
-  'validationListFilters',
-  DEFAULT_VALIDATION_LIST_FILTERS_CONFIG,
-) ?? DEFAULT_VALIDATION_LIST_FILTERS_CONFIG;
+export const getValidationListFiltersConfig = (modulesManager) => {
+  const configured = modulesManager?.getConf(
+    HOUSEHOLD_VALIDATION_CONFIG_MODULE_NAME,
+    'validationListFilters',
+    DEFAULT_VALIDATION_LIST_FILTERS_CONFIG,
+  );
+
+  return { ...DEFAULT_VALIDATION_LIST_FILTERS_CONFIG, ...configured };
+};
 
 const matchProgram = (program, programs) => {
   const code = program?.code?.toUpperCase() ?? '';
