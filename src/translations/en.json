@@ -15,7 +15,9 @@
   "generateValidationList.selectedFemaleHeaded": "Female-Headed Households Selected",
   "generateValidationList.selectedYouthHeaded": "Youth-Headed Households Selected",
   "generateValidationList.selectedReserve": "Reserve Households Selected",
+  "generateValidationList.missingRequiredFiltersTitle": "Missing required filters",
   "generateValidationList.missingRequiredFilters": "Select a district and micro-catchment, then enter the total households target to generate a validation list.",
+  "generateValidationList.unmatchedProgramFiltersTitle": "Program not configured",
   "generateValidationList.unmatchedProgramFilters": "This Program has no configured filters. Contact your administrator to configure it before generating a validation list.",
   "generateValidationList.previewHouseholdsButton": "Preview Households",
 
