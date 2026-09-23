@@ -268,6 +268,7 @@ function ValidationListFiltersPanel({
             withNull
             required
             filterLabels={false}
+            type="EVERY_TYPE"
             value={filters?.program}
             onChange={onChangeProgram}
             label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.program')}
