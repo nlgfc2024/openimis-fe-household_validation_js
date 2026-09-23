@@ -15,7 +15,7 @@ export const getValidationListFiltersConfig = (modulesManager) => modulesManager
 
 const matchProgram = (program, programs) => {
   const code = program?.code?.toUpperCase() ?? '';
-  return programs.find((p) => p?.match?.toUpperCase() === code) ?? null;
+  return programs.find((p) => p?.code?.toUpperCase() === code) ?? null;
 };
 
 // Resolves which filters should be shown/required for the current selection.
