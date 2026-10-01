@@ -10,10 +10,10 @@ import {
   Grid,
   Input,
   Typography,
-  MenuItem,
 } from '@material-ui/core';
 import { withStyles, withTheme } from '@material-ui/core/styles';
-import { formatMessage, coreAlert } from '@openimis/fe-core';
+import { formatMessage, coreAlert, SearcherActionButton } from '@openimis/fe-core';
+import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import {
@@ -82,6 +82,17 @@ const styles = (theme) => ({
   closeButton: {
     margin: theme.spacing(0, 2),
   },
+  uploadTrigger: {
+    marginLeft: theme.spacing(1),
+    minHeight: 42,
+    padding: theme.spacing(0.75, 2),
+    borderRadius: theme.shape.borderRadius,
+    whiteSpace: "nowrap",
+    "& .MuiTypography-root": {
+      fontWeight: 600,
+      letterSpacing: "0.02em",
+    },
+  },
 });
 
 const readFileAsBase64 = (file) => new Promise((resolve, reject) => {
@@ -143,6 +154,7 @@ function UploadValidatedListDialog({
   fetchRejectedHouseholds,
   clearRejectedHouseholds,
   coreAlert,
+  renderTrigger,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState(null);
@@ -269,9 +281,20 @@ function UploadValidatedListDialog({
 
   return (
     <>
-      <MenuItem onClick={handleOpen}>
-        {fm('uploadValidationList.buttonLabel')}
-      </MenuItem>
+      {renderTrigger ? renderTrigger({
+        onClick: handleOpen,
+        label: fm('uploadValidationList.buttonLabel'),
+      }) : (
+        <SearcherActionButton
+          onClick={handleOpen}
+          startIcon={<CloudUploadIcon />}
+          label={fm('uploadValidationList.buttonLabel')}
+          variant="outlined"
+          size="medium"
+          className={classes.uploadTrigger}
+          borderless={false}
+        />
+      )}
       <Dialog open={isOpen} onClose={handleClose} classes={{ paper: classes.dialogPaper }}>
         <DialogTitle>
           {fm('uploadValidationList.dialogTitle')}

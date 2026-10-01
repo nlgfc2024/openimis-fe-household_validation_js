@@ -44,7 +44,7 @@
 
   "dialog.close": "Close",
 
-  "uploadValidationList.buttonLabel": "UPLOAD VALIDATED LIST",
+  "uploadValidationList.buttonLabel": "Upload List",
   "uploadValidationList.dialogTitle": "Upload Validated Household List",
   "uploadValidationList.upload": "Upload",
   "uploadValidationList.uploading": "Uploading...",
