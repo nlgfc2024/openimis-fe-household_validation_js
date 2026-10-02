@@ -37,6 +37,7 @@ const DEFAULT_CONFIG = {
     { key: `${HOUSEHOLD_VALIDATION_MODULE_NAME}.route.generateValidationList`, ref: ROUTE_GENERATE_VALIDATION_LIST },
     { key: `${HOUSEHOLD_VALIDATION_MODULE_NAME}.UploadValidatedListDialog`, ref: UploadValidatedListDialog },
   ],
+  [INDIVIDUAL_GROUP_MENU_CONTRIBUTION_KEY]: UploadValidatedListDialog,
 };
 
 export const HouseholdValidationModule = (cfg) => ({ ...DEFAULT_CONFIG, ...cfg });

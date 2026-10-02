@@ -82,17 +82,6 @@ const styles = (theme) => ({
   closeButton: {
     margin: theme.spacing(0, 2),
   },
-  uploadTrigger: {
-    marginLeft: theme.spacing(1),
-    minHeight: 42,
-    padding: theme.spacing(0.75, 2),
-    borderRadius: theme.shape.borderRadius,
-    whiteSpace: "nowrap",
-    "& .MuiTypography-root": {
-      fontWeight: 600,
-      letterSpacing: "0.02em",
-    },
-  },
 });
 
 const readFileAsBase64 = (file) => new Promise((resolve, reject) => {
@@ -291,7 +280,6 @@ function UploadValidatedListDialog({
           label={fm('uploadValidationList.buttonLabel')}
           variant="outlined"
           size="medium"
-          className={classes.uploadTrigger}
           borderless={false}
         />
       )}
