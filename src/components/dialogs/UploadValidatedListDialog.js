@@ -11,8 +11,14 @@ import {
   Input,
   Typography,
 } from '@material-ui/core';
-import { withStyles, withTheme } from '@material-ui/core/styles';
-import { formatMessage, coreAlert, SearcherActionButton } from '@openimis/fe-core';
+import { fade, withStyles, withTheme } from '@material-ui/core/styles';
+import {
+  FeedbackBanner,
+  formatMessage,
+  LoadingOverlay,
+  coreAlert,
+  SearcherActionButton,
+} from '@openimis/fe-core';
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
@@ -57,12 +63,24 @@ const styles = (theme) => ({
     justifyContent: 'space-between',
     padding: theme.spacing(0.5, 0),
   },
+  issueMetrics: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: theme.spacing(1),
+    marginTop: theme.spacing(1),
+  },
+  issueMetric: {
+    border: `1px solid ${fade(theme.palette.error.main, 0.3)}`,
+    borderRadius: theme.shape.borderRadius,
+    fontSize: '0.75rem',
+    padding: theme.spacing(0.25, 0.75),
+  },
   errorList: {
     maxHeight: 160,
     overflowY: 'auto',
     marginTop: theme.spacing(1),
     padding: theme.spacing(1),
-    backgroundColor: theme.palette?.error?.light ?? '#fdecea',
+    backgroundColor: fade(theme.palette.error.main, 0.12),
     borderRadius: theme.shape?.borderRadius ?? 4,
   },
   actionsContainer: {
@@ -261,8 +279,23 @@ function UploadValidatedListDialog({
   const showResult = submitted && uploadedValidationList
     && !uploadingValidationList && !errorValidationUpload;
   const showError = submitted && !!errorValidationUpload;
+  const resultCount = (field) => Number(validationUploadResult?.[field] || 0);
+  const hasValidationIssues = [
+    'errors',
+    'participantsNotVerified',
+    'participantsRejected',
+    'householdsNotVerified',
+    'householdsWithMultiplePrimaryWorkers',
+  ].some((field) => resultCount(field) > 0);
+  const issueMetrics = [
+    ['participantsNotVerified', 'uploadValidationList.participantsNotVerified'],
+    ['participantsRejected', 'uploadValidationList.participantsRejected'],
+    ['householdsNotVerified', 'uploadValidationList.householdsNotVerified'],
+    ['householdsWithMultiplePrimaryWorkers', 'uploadValidationList.householdsWithMultiplePrimaryWorkers'],
+    ['errors', 'uploadValidationList.errors'],
+  ].filter(([field]) => resultCount(field) > 0);
   const canDownloadRejectedHouseholds = showResult
-    && validationUploadResult?.householdsWithMultiplePrimaryWorkers > 0
+    && hasValidationIssues
     && validationUploadResult?.batchId
     && validationUploadResult?.uploadAttemptId;
 
@@ -310,6 +343,31 @@ function UploadValidatedListDialog({
 
             {showResult && (
               <Grid item className={classes.item}>
+                <FeedbackBanner
+                  severity={hasValidationIssues ? 'error' : 'success'}
+                  title={fm(
+                    hasValidationIssues
+                      ? 'uploadValidationList.partial.title'
+                      : 'uploadValidationList.success.title',
+                  )}
+                >
+                  {hasValidationIssues
+                    ? (
+                      <>
+                        <Typography variant="body2">
+                          {fm('uploadValidationList.partial.message')}
+                        </Typography>
+                        <div className={classes.issueMetrics}>
+                          {issueMetrics.map(([field, label]) => (
+                            <Typography key={field} className={classes.issueMetric} component="span">
+                              {`${resultCount(field).toLocaleString()} ${fm(label)}`}
+                            </Typography>
+                          ))}
+                        </div>
+                      </>
+                    )
+                    : fm('uploadValidationList.success.message')}
+                </FeedbackBanner>
                 <Typography className={classes.resultTitle}>
                   {fm('uploadValidationList.uploadComplete')}
                 </Typography>
@@ -338,16 +396,10 @@ function UploadValidatedListDialog({
 
             {showError && (
               <Grid item className={classes.item}>
-                <Typography className={classes.resultTitle} color="error">
-                  {fm('uploadValidationList.uploadFailed')}
-                </Typography>
-                <Typography variant="body2">
-                  {errorValidationUpload?.code ? `${errorValidationUpload.code}: ` : ''}
-                  {errorValidationUpload?.message}
-                </Typography>
-                {!!errorValidationUpload?.detail && (
-                  <Typography variant="body2">{errorValidationUpload.detail}</Typography>
-                )}
+                <FeedbackBanner severity="error" title={fm('uploadValidationList.uploadFailed')}>
+                  {`${errorValidationUpload?.code ? `${errorValidationUpload.code}: ` : ''}${errorValidationUpload?.message || ''}`}
+                </FeedbackBanner>
+                {!!errorValidationUpload?.detail && <Typography variant="body2">{errorValidationUpload.detail}</Typography>}
               </Grid>
             )}
           </Grid>
@@ -392,6 +444,7 @@ function UploadValidatedListDialog({
           </div>
         </DialogActions>
       </Dialog>
+      <LoadingOverlay open={uploadingValidationList} label={fm('uploadValidationList.uploading')} />
     </>
   );
 }
