@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { injectIntl } from 'react-intl';
 import {
   Button,
@@ -32,6 +32,8 @@ import {
   HOUSEHOLD_VALIDATION_MODULE_NAME,
   RIGHT_HOUSEHOLD_VALIDATION_UPLOAD,
   RIGHT_INDIVIDUAL_CREATE,
+  KYC_DETAILS_WORKFLOW_NAME,
+  KYC_DETAILS_WORKFLOW_GROUP,
 } from '../../constants';
 import {
   clearRejectedHouseholds,
@@ -144,11 +146,19 @@ const getKycUploadErrorMessage = (payload) => {
     if (typeof value === 'string') return value;
     if (Array.isArray(value)) return value.map(formatError).filter(Boolean).join('\n');
     if (value && typeof value === 'object') {
-      return Object.values(value).map(formatError).filter(Boolean).join('\n');
+      return Object.entries(value)
+        .map(([key, item]) => `${key.replace(/_/g, ' ')}: ${formatError(item)}`)
+        .filter((entry) => !entry.endsWith(': '))
+        .join('\n');
     }
-    return '';
+    return value == null ? '' : String(value);
   };
   return formatError(payload?.error ?? payload?.detail ?? payload?.message);
+};
+
+const multipartApiHeaders = () => {
+  const { 'Content-Type': ignoredContentType, ...headers } = apiHeaders();
+  return headers;
 };
 
 const downloadRejectedHouseholds = (fileBase64, fileName) => {
@@ -206,6 +216,8 @@ function UploadValidatedListDialog({
   const [uploadType, setUploadType] = useState(UPLOAD_TYPE.VALIDATION_LIST);
   const [uploadingKycDetails, setUploadingKycDetails] = useState(false);
   const [kycUploadResult, setKycUploadResult] = useState(null);
+  const abortControllerRef = useRef(null);
+  const isMountedRef = useRef(true);
   const canUploadKycDetails = rights.includes(RIGHT_INDIVIDUAL_CREATE);
   const uploading = uploadingValidationList || uploadingKycDetails;
 
@@ -225,8 +237,14 @@ function UploadValidatedListDialog({
     if (uploading) return;
     setIsOpen(false);
     setFile(null);
+    setUploadType(UPLOAD_TYPE.VALIDATION_LIST);
     resetResult();
   };
+
+  useEffect(() => () => {
+    isMountedRef.current = false;
+    abortControllerRef.current?.abort();
+  }, []);
 
   const handleFileChange = (event) => {
     setFile(event.target.files?.[0] ?? null);
@@ -248,48 +266,64 @@ function UploadValidatedListDialog({
 
       setSubmitted(true);
       setUploadingKycDetails(true);
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
       try {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('workflow_name', 'Python KYC Details');
-        formData.append('workflow_group', 'individual');
+        formData.append('workflow_name', KYC_DETAILS_WORKFLOW_NAME);
+        formData.append('workflow_group', KYC_DETAILS_WORKFLOW_GROUP);
         formData.append('group_aggregation_column', '');
         const response = await fetch(`${baseApiUrl}/individual/import_individuals/`, {
-          headers: apiHeaders,
+          headers: multipartApiHeaders(),
           body: formData,
           method: 'POST',
           credentials: 'same-origin',
+          signal: abortController.signal,
         });
         const body = await response.text();
         let result = {};
+        let isJsonResponse = !body;
         if (body) {
           try {
             result = JSON.parse(body);
+            isJsonResponse = true;
           } catch {
-            result = { success: false, error: body };
+            result = { success: false };
           }
         }
 
         if (!response.ok || result.success === false) {
-          setKycUploadResult({
-            status: 'error',
-            message: getKycUploadErrorMessage(result) || fm('uploadKycDetails.failed.message'),
-          });
+          if (isMountedRef.current) {
+            setKycUploadResult({
+              status: 'error',
+              message: isJsonResponse
+                ? getKycUploadErrorMessage(result) || fm('uploadKycDetails.failed.message')
+                : `${fm('uploadKycDetails.failed.message')} (${response.status})`,
+            });
+          }
           return;
         }
 
-        setKycUploadResult({
-          status: 'success',
-          message: fm('uploadKycDetails.success.message'),
-          summary: result?.data?.summary ?? {},
-        });
+        if (isMountedRef.current) {
+          setKycUploadResult({
+            status: 'success',
+            message: fm('uploadKycDetails.success.message'),
+            summary: result?.data?.summary ?? {},
+          });
+        }
       } catch (error) {
-        setKycUploadResult({
-          status: 'error',
-          message: error?.message || fm('uploadKycDetails.failed.message'),
-        });
+        if (error.name !== 'AbortError' && isMountedRef.current) {
+          setKycUploadResult({
+            status: 'error',
+            message: error?.message || fm('uploadKycDetails.failed.message'),
+          });
+        }
       } finally {
-        setUploadingKycDetails(false);
+        if (abortControllerRef.current === abortController) {
+          abortControllerRef.current = null;
+        }
+        if (isMountedRef.current) setUploadingKycDetails(false);
       }
       return;
     }
@@ -493,7 +527,9 @@ function UploadValidatedListDialog({
                       : 'uploadKycDetails.failed.title',
                   )}
                 >
-                  {kycUploadResult.message}
+                  <Typography variant="body2" style={{ whiteSpace: 'pre-line' }}>
+                    {kycUploadResult.message}
+                  </Typography>
                 </FeedbackBanner>
                 {kycUploadResult.status === 'success' && (
                   <>
