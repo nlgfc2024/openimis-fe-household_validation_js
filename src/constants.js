@@ -8,6 +8,9 @@ export const INDIVIDUAL_GROUP_MENU_CONTRIBUTION_KEY = 'individual.group.GroupMen
 export const RIGHT_HOUSEHOLD_VALIDATION_SEARCH = 958001;
 export const RIGHT_HOUSEHOLD_VALIDATION_GENERATE = 958001;
 export const RIGHT_HOUSEHOLD_VALIDATION_UPLOAD = 958002;
+export const RIGHT_INDIVIDUAL_CREATE = 159002;
+export const KYC_DETAILS_WORKFLOW_NAME = 'Python KYC Details';
+export const KYC_DETAILS_WORKFLOW_GROUP = 'individual';
 
 // Search / Pagination
 export const DEFAULT_PAGE_SIZE = 10;

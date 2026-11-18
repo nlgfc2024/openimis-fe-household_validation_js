@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { injectIntl } from 'react-intl';
 import {
   Button,
@@ -7,13 +7,19 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  FormControl,
   Grid,
   Input,
+  InputLabel,
+  MenuItem,
+  Select,
   Typography,
 } from '@material-ui/core';
 import { fade, withStyles, withTheme } from '@material-ui/core/styles';
 import {
   FeedbackBanner,
+  apiHeaders,
+  baseApiUrl,
   formatMessage,
   LoadingOverlay,
   coreAlert,
@@ -25,6 +31,9 @@ import { bindActionCreators } from 'redux';
 import {
   HOUSEHOLD_VALIDATION_MODULE_NAME,
   RIGHT_HOUSEHOLD_VALIDATION_UPLOAD,
+  RIGHT_INDIVIDUAL_CREATE,
+  KYC_DETAILS_WORKFLOW_NAME,
+  KYC_DETAILS_WORKFLOW_GROUP,
 } from '../../constants';
 import {
   clearRejectedHouseholds,
@@ -44,6 +53,22 @@ const RESULT_FIELDS = [
   'participantUpdates',
   'errors',
 ];
+
+const KYC_RESULT_FIELDS = [
+  'rows_read',
+  'records_ready_for_approval',
+  'records_rejected',
+  'primary_recipients_matched',
+  'payment_accounts_submitted',
+  'national_ids_submitted',
+];
+
+const IGNORED_KYC_ERROR_KEYS = new Set(['timestamp', 'upload_id', 'data_upload_id']);
+
+const UPLOAD_TYPE = {
+  VALIDATION_LIST: 'validationList',
+  KYC_DETAILS: 'kycDetails',
+};
 
 const styles = (theme) => ({
   item: theme.paper.item,
@@ -115,6 +140,29 @@ const readFileAsBase64 = (file) => new Promise((resolve, reject) => {
 const isXlsxFile = (file) => file.name?.toLowerCase().endsWith('.xlsx')
   || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
+const isKycFile = (file) => /\.(csv|xls|xlsx)$/i.test(file.name ?? '');
+
+const getKycUploadErrorMessage = (payload) => {
+  const formatError = (value) => {
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value)) return value.map(formatError).filter(Boolean).join('\n');
+    if (value && typeof value === 'object') {
+      return Object.entries(value)
+        .filter(([key]) => !IGNORED_KYC_ERROR_KEYS.has(key))
+        .map(([key, item]) => `${key.replace(/_/g, ' ')}: ${formatError(item)}`)
+        .filter((entry) => !entry.endsWith(': '))
+        .join('\n');
+    }
+    return value == null ? '' : String(value);
+  };
+  return formatError(payload?.error ?? payload?.detail ?? payload?.message);
+};
+
+const multipartApiHeaders = () => {
+  const { 'Content-Type': ignoredContentType, ...headers } = apiHeaders();
+  return headers;
+};
+
 const downloadRejectedHouseholds = (fileBase64, fileName) => {
   if (!fileBase64) return false;
   try {
@@ -167,12 +215,20 @@ function UploadValidatedListDialog({
   const [file, setFile] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [downloadRequested, setDownloadRequested] = useState(false);
+  const [uploadType, setUploadType] = useState(UPLOAD_TYPE.VALIDATION_LIST);
+  const [uploadingKycDetails, setUploadingKycDetails] = useState(false);
+  const [kycUploadResult, setKycUploadResult] = useState(null);
+  const abortControllerRef = useRef(null);
+  const isMountedRef = useRef(true);
+  const canUploadKycDetails = rights.includes(RIGHT_INDIVIDUAL_CREATE);
+  const uploading = uploadingValidationList || uploadingKycDetails;
 
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
 
   const resetResult = () => {
     setSubmitted(false);
     setDownloadRequested(false);
+    setKycUploadResult(null);
     clearUploadValidationList();
     clearRejectedHouseholds();
   };
@@ -180,11 +236,17 @@ function UploadValidatedListDialog({
   const handleOpen = () => setIsOpen(true);
 
   const handleClose = () => {
-    if (uploadingValidationList) return;
+    if (uploading) return;
     setIsOpen(false);
     setFile(null);
+    setUploadType(UPLOAD_TYPE.VALIDATION_LIST);
     resetResult();
   };
+
+  useEffect(() => () => {
+    isMountedRef.current = false;
+    abortControllerRef.current?.abort();
+  }, []);
 
   const handleFileChange = (event) => {
     setFile(event.target.files?.[0] ?? null);
@@ -193,6 +255,81 @@ function UploadValidatedListDialog({
 
   const onSubmit = async () => {
     if (!file) return;
+    if (uploadType === UPLOAD_TYPE.KYC_DETAILS) {
+      if (!canUploadKycDetails) return;
+      if (!isKycFile(file)) {
+        setSubmitted(true);
+        setKycUploadResult({
+          status: 'error',
+          message: fm('uploadKycDetails.invalidFormat.message'),
+        });
+        return;
+      }
+
+      setSubmitted(true);
+      setUploadingKycDetails(true);
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('workflow_name', KYC_DETAILS_WORKFLOW_NAME);
+        formData.append('workflow_group', KYC_DETAILS_WORKFLOW_GROUP);
+        formData.append('group_aggregation_column', '');
+        const response = await fetch(`${baseApiUrl}/individual/import_individuals/`, {
+          headers: multipartApiHeaders(),
+          body: formData,
+          method: 'POST',
+          credentials: 'same-origin',
+          signal: abortController.signal,
+        });
+        const body = await response.text();
+        let result = {};
+        let isJsonResponse = !body;
+        if (body) {
+          try {
+            result = JSON.parse(body);
+            isJsonResponse = true;
+          } catch {
+            result = { success: false };
+          }
+        }
+
+        if (!response.ok || result.success === false) {
+          if (isMountedRef.current) {
+            setKycUploadResult({
+              status: 'error',
+              message: isJsonResponse
+                ? getKycUploadErrorMessage(result) || fm('uploadKycDetails.failed.message')
+                : `${fm('uploadKycDetails.failed.message')} (${response.status})`,
+            });
+          }
+          return;
+        }
+
+        if (isMountedRef.current) {
+          setKycUploadResult({
+            status: 'success',
+            message: fm('uploadKycDetails.success.message'),
+            summary: result?.data?.summary ?? {},
+          });
+        }
+      } catch (error) {
+        if (error.name !== 'AbortError' && isMountedRef.current) {
+          setKycUploadResult({
+            status: 'error',
+            message: error?.message || fm('uploadKycDetails.failed.message'),
+          });
+        }
+      } finally {
+        if (abortControllerRef.current === abortController) {
+          abortControllerRef.current = null;
+        }
+        if (isMountedRef.current) setUploadingKycDetails(false);
+      }
+      return;
+    }
+
     if (!isXlsxFile(file)) {
       coreAlert(
         fm('uploadValidationList.invalidFormat.header'),
@@ -279,6 +416,8 @@ function UploadValidatedListDialog({
   const showResult = submitted && uploadedValidationList
     && !uploadingValidationList && !errorValidationUpload;
   const showError = submitted && !!errorValidationUpload;
+  const showKycResult = uploadType === UPLOAD_TYPE.KYC_DETAILS
+    && submitted && !uploadingKycDetails && kycUploadResult;
   const resultCount = (field) => Number(validationUploadResult?.[field] || 0);
   const hasValidationIssues = [
     'errors',
@@ -318,26 +457,102 @@ function UploadValidatedListDialog({
       )}
       <Dialog open={isOpen} onClose={handleClose} classes={{ paper: classes.dialogPaper }}>
         <DialogTitle>
-          {fm('uploadValidationList.dialogTitle')}
+          {fm(uploadType === UPLOAD_TYPE.KYC_DETAILS
+            ? 'uploadKycDetails.dialogTitle'
+            : 'uploadValidationList.dialogTitle')}
         </DialogTitle>
         <DialogContent>
           <Grid container direction="column">
+            {canUploadKycDetails && (
+              <Grid item className={classes.item}>
+                <FormControl fullWidth>
+                  <InputLabel id="household-upload-type-label">
+                    {fm('upload.dialog.uploadType')}
+                  </InputLabel>
+                  <Select
+                    labelId="household-upload-type-label"
+                    id="household-upload-type"
+                    value={uploadType}
+                    onChange={(event) => {
+                      setUploadType(event.target.value);
+                      setFile(null);
+                      resetResult();
+                    }}
+                    disabled={uploading}
+                  >
+                    <MenuItem value={UPLOAD_TYPE.VALIDATION_LIST}>
+                      {fm('upload.dialog.validationList')}
+                    </MenuItem>
+                    <MenuItem value={UPLOAD_TYPE.KYC_DETAILS}>
+                      {fm('upload.dialog.kycDetails')}
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
+            {uploadType === UPLOAD_TYPE.KYC_DETAILS && (
+              <Grid item className={classes.item}>
+                <Typography variant="body2">
+                  {fm('uploadKycDetails.description')}
+                </Typography>
+              </Grid>
+            )}
             <Grid item className={classes.item}>
               <Input
                 onChange={handleFileChange}
                 required
                 id="household-validation-upload-input"
                 inputProps={{
-                  accept: '.xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                  accept: uploadType === UPLOAD_TYPE.KYC_DETAILS
+                    ? '.csv, .xls, .xlsx'
+                    : '.xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 }}
                 type="file"
-                disabled={uploadingValidationList}
+                key={uploadType}
+                disabled={uploading}
               />
             </Grid>
 
-            {(showResult || showError) && (
+            {(showResult || showError || showKycResult) && (
               <Grid item className={classes.item}>
                 <Divider className={classes.divider} />
+              </Grid>
+            )}
+
+            {showKycResult && (
+              <Grid item className={classes.item}>
+                <FeedbackBanner
+                  severity={kycUploadResult.status}
+                  title={fm(
+                    kycUploadResult.status === 'success'
+                      ? 'uploadKycDetails.success.title'
+                      : 'uploadKycDetails.failed.title',
+                  )}
+                >
+                  <Typography variant="body2" style={{ whiteSpace: 'pre-line' }}>
+                    {kycUploadResult.message}
+                  </Typography>
+                </FeedbackBanner>
+                {kycUploadResult.status === 'success' && (
+                  <>
+                    <Typography className={classes.resultTitle}>
+                      {fm('uploadKycDetails.uploadComplete')}
+                    </Typography>
+                    {KYC_RESULT_FIELDS.map((field) => (
+                      <div key={field} className={classes.resultRow}>
+                        <Typography variant="body2" color="textSecondary">
+                          {fm(`uploadKycDetails.${field}`)}
+                        </Typography>
+                        <Typography variant="body2">
+                          {Number(kycUploadResult.summary?.[field] || 0).toLocaleString()}
+                        </Typography>
+                      </div>
+                    ))}
+                    <Typography variant="caption" color="textSecondary">
+                      {fm('uploadKycDetails.pendingApproval')}
+                    </Typography>
+                  </>
+                )}
               </Grid>
             )}
 
@@ -411,7 +626,7 @@ function UploadValidatedListDialog({
               variant="outlined"
               autoFocus
               className={classes.closeButton}
-              disabled={uploadingValidationList}
+              disabled={uploading}
             >
               {fm('uploadValidationList.close')}
             </Button>
@@ -429,22 +644,31 @@ function UploadValidatedListDialog({
                   : fm('uploadValidationList.downloadRejectedHouseholds')}
               </Button>
             )}
-            {!showResult && (
+            {!showResult && !(showKycResult && kycUploadResult.status === 'success') && (
               <Button
                 variant="contained"
                 color="primary"
                 onClick={onSubmit}
-                disabled={!file || uploadingValidationList}
+                disabled={!file || uploading}
               >
-                {uploadingValidationList
-                  ? fm('uploadValidationList.uploading')
-                  : fm('uploadValidationList.upload')}
+                {uploading
+                  ? fm(uploadType === UPLOAD_TYPE.KYC_DETAILS
+                    ? 'uploadKycDetails.uploading'
+                    : 'uploadValidationList.uploading')
+                  : fm(uploadType === UPLOAD_TYPE.KYC_DETAILS
+                    ? 'uploadKycDetails.upload'
+                    : 'uploadValidationList.upload')}
               </Button>
             )}
           </div>
         </DialogActions>
       </Dialog>
-      <LoadingOverlay open={uploadingValidationList} label={fm('uploadValidationList.uploading')} />
+      <LoadingOverlay
+        open={uploading}
+        label={fm(uploadType === UPLOAD_TYPE.KYC_DETAILS
+          ? 'uploadKycDetails.uploading'
+          : 'uploadValidationList.uploading')}
+      />
     </>
   );
 }
