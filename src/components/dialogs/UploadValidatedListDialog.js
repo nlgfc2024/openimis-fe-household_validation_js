@@ -61,8 +61,9 @@ const KYC_RESULT_FIELDS = [
   'primary_recipients_matched',
   'payment_accounts_submitted',
   'national_ids_submitted',
-  'errors',
 ];
+
+const IGNORED_KYC_ERROR_KEYS = new Set(['timestamp', 'upload_id', 'data_upload_id']);
 
 const UPLOAD_TYPE = {
   VALIDATION_LIST: 'validationList',
@@ -147,6 +148,7 @@ const getKycUploadErrorMessage = (payload) => {
     if (Array.isArray(value)) return value.map(formatError).filter(Boolean).join('\n');
     if (value && typeof value === 'object') {
       return Object.entries(value)
+        .filter(([key]) => !IGNORED_KYC_ERROR_KEYS.has(key))
         .map(([key, item]) => `${key.replace(/_/g, ' ')}: ${formatError(item)}`)
         .filter((entry) => !entry.endsWith(': '))
         .join('\n');
