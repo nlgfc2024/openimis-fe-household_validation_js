@@ -52,6 +52,16 @@ const RESULT_FIELDS = [
   'errors',
 ];
 
+const KYC_RESULT_FIELDS = [
+  'rows_read',
+  'records_ready_for_approval',
+  'records_rejected',
+  'primary_recipients_matched',
+  'payment_accounts_submitted',
+  'national_ids_submitted',
+  'errors',
+];
+
 const UPLOAD_TYPE = {
   VALIDATION_LIST: 'validationList',
   KYC_DETAILS: 'kycDetails',
@@ -271,6 +281,7 @@ function UploadValidatedListDialog({
         setKycUploadResult({
           status: 'success',
           message: fm('uploadKycDetails.success.message'),
+          summary: result?.data?.summary ?? {},
         });
       } catch (error) {
         setKycUploadResult({
@@ -484,6 +495,26 @@ function UploadValidatedListDialog({
                 >
                   {kycUploadResult.message}
                 </FeedbackBanner>
+                {kycUploadResult.status === 'success' && (
+                  <>
+                    <Typography className={classes.resultTitle}>
+                      {fm('uploadKycDetails.uploadComplete')}
+                    </Typography>
+                    {KYC_RESULT_FIELDS.map((field) => (
+                      <div key={field} className={classes.resultRow}>
+                        <Typography variant="body2" color="textSecondary">
+                          {fm(`uploadKycDetails.${field}`)}
+                        </Typography>
+                        <Typography variant="body2">
+                          {Number(kycUploadResult.summary?.[field] || 0).toLocaleString()}
+                        </Typography>
+                      </div>
+                    ))}
+                    <Typography variant="caption" color="textSecondary">
+                      {fm('uploadKycDetails.pendingApproval')}
+                    </Typography>
+                  </>
+                )}
               </Grid>
             )}
 
