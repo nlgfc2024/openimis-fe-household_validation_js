@@ -19,9 +19,12 @@ import { bindActionCreators } from 'redux';
 import ValidationListFiltersPanel from './ValidationListFiltersPanel';
 import HouseholdPreviewDialog from './dialogs/HouseholdPreviewDialog';
 import { HOUSEHOLD_VALIDATION_MODULE_NAME } from '../constants';
+import IndividualValidationPanel from './IndividualValidationPanel';
+import useValidationProgrammes from '../util/useValidationProgrammes';
+import { programmeFor, validationPermissions } from '../util/individualValidation';
 import { hasRequiredGenerationFilters } from '../util/filters';
 import { getValidationListFiltersConfig, resolveActiveFilterSet } from '../util/validationFilters';
-import { generateValidationList } from '../actions';
+import { generateValidationList, clearValidationLists, clearValidationPreview } from '../actions';
 
 const styles = (theme) => ({
   item: theme.paper.item,
@@ -62,21 +65,42 @@ function HouseholdValidationHeadPanel({
   validationListResult,
   // Actions
   generateValidationList,
+  clearValidationLists,
+  clearValidationPreview,
+  errorValidationLists,
+  rights,
 }) {
   const [showPreview, setShowPreview] = React.useState(false);
   const [generatedCatchment, setGeneratedCatchment] = React.useState(null);
   const [filtersTouched, setFiltersTouched] = React.useState(false);
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
+  const permissions = validationPermissions(rights);
+  const { programmes, loaded, error: programmeError } = useValidationProgrammes(permissions.query);
+  const contract = programmeFor(programmes, edited?.program);
+  const individual = contract?.subject === 'INDIVIDUAL';
   const filtersConfig = getValidationListFiltersConfig(modulesManager);
-  const { requiredFilters, programUnmatched } = resolveActiveFilterSet(filtersConfig, edited?.program);
-  const canGenerate = !programUnmatched && hasRequiredGenerationFilters(edited, requiredFilters);
+  const { requiredFilters, programUnmatched } = resolveActiveFilterSet(filtersConfig, edited?.program, contract);
+  const needsProgram = programmes.some((item) => item.subject === 'INDIVIDUAL');
+  const canGenerate = permissions.query && loaded && !programUnmatched
+    && (!edited?.program || !!contract) && (!needsProgram || !!edited?.program)
+    && hasRequiredGenerationFilters(edited, requiredFilters);
+
+  React.useEffect(() => {
+    clearValidationLists();
+    clearValidationPreview();
+    return () => { clearValidationLists(); clearValidationPreview(); };
+  }, [clearValidationLists, clearValidationPreview]);
 
   const handleFiltersChange = (newFilters) => {
+    clearValidationLists();
+    clearValidationPreview();
+    setShowPreview(false);
     setFiltersTouched(true);
     onEditedChanged(newFilters);
   };
 
   const handleGenerate = () => {
+    if (!canGenerate || individual) return;
     setGeneratedCatchment(edited?.microCatchment ?? null);
     generateValidationList(edited);
   };
@@ -108,6 +132,8 @@ function HouseholdValidationHeadPanel({
           filters={edited}
           onChangeFilters={handleFiltersChange}
           modulesManager={modulesManager}
+          contract={contract}
+          programmes={programmes}
         />
         {filtersTouched && !canGenerate && (
           <WarningBox
@@ -121,163 +147,173 @@ function HouseholdValidationHeadPanel({
         )}
       </Grid>
 
-      {/* ── Generate button ── */}
-      <Grid item xs={12} className={classes.item}>
-        <Grid container alignItems="center">
-          <Grid item>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleGenerate}
-              disabled={generatingValidationLists || !canGenerate}
-            >
-              {generatingValidationLists
-                ? fm('generateValidationList.generatingButton')
-                : fm('generateValidationList.generateButton')}
-            </Button>
-          </Grid>
-        </Grid>
-      </Grid>
-
-      {/* ── Validation List Results Summary (only after list generation) ── */}
-      {generatedValidationLists && (
+      {programmeError && <Typography color="error" role="alert">{programmeError}</Typography>}
+      {individual && (
+        <IndividualValidationPanel intl={intl} filters={edited} canGenerate={canGenerate} rights={rights} />
+      )}
+      {!individual && (
         <>
+
+          {/* ── Generate button ── */}
           <Grid item xs={12} className={classes.item}>
-            <Divider className={classes.divider} />
+            <Grid container alignItems="center">
+              <Grid item>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleGenerate}
+                  disabled={generatingValidationLists || !canGenerate}
+                >
+                  {generatingValidationLists
+                    ? fm('generateValidationList.generatingButton')
+                    : fm('generateValidationList.generateButton')}
+                </Button>
+              </Grid>
+            </Grid>
           </Grid>
+
+          {/* ── Validation List Results Summary (only after list generation) ── */}
+          {generatedValidationLists && !errorValidationLists && (
+          <>
+            <Grid item xs={12} className={classes.item}>
+              <Divider className={classes.divider} />
+            </Grid>
+            <Grid item xs={12}>
+              <Typography className={classes.title}>
+                {fm('generateValidationList.summaryTitle')}
+              </Typography>
+              <Typography className={classes.summaryContext} variant="subtitle1">
+                {fm('generateValidationList.catchment')}
+                {': '}
+                {generatedCatchment?.name ?? generatedCatchment?.code ?? '-'}
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={4} className={classes.item}>
+              <Card className={classes.card} variant="outlined">
+                <CardContent>
+                  <Typography variant="body2" color="textSecondary">
+                    {fm('generateValidationList.totalHouseholds')}
+                  </Typography>
+                  <Typography className={classes.cardNumber}>
+                    {validationListResult?.totalHouseholds?.toLocaleString() ?? 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={4} className={classes.item}>
+              <Card className={classes.card} variant="outlined">
+                <CardContent>
+                  <Typography variant="body2" color="textSecondary">
+                    {fm('generateValidationList.totalIndividuals')}
+                  </Typography>
+                  <Typography className={classes.cardNumber}>
+                    {validationListResult?.totalIndividuals?.toLocaleString() ?? 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={4} className={classes.item}>
+              <Card className={classes.card} variant="outlined">
+                <CardContent>
+                  <Typography variant="body2" color="textSecondary">
+                    {fm('generateValidationList.selectedHouseholds')}
+                  </Typography>
+                  <Typography className={classes.cardNumber}>
+                    {validationListResult?.selectedHouseholds?.toLocaleString() ?? 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={4} className={classes.item}>
+              <Card className={classes.card} variant="outlined">
+                <CardContent>
+                  <Typography variant="body2" color="textSecondary">
+                    {fm('generateValidationList.selectedIndividuals')}
+                  </Typography>
+                  <Typography className={classes.cardNumber}>
+                    {validationListResult?.selectedIndividuals?.toLocaleString() ?? 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={4} className={classes.item}>
+              <Card className={classes.card} variant="outlined">
+                <CardContent>
+                  <Typography variant="body2" color="textSecondary">
+                    {fm('generateValidationList.selectedFemaleHeaded')}
+                  </Typography>
+                  <Typography className={classes.cardNumber}>
+                    {validationListResult?.selectedFemaleHeadedHouseholds?.toLocaleString() ?? 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={4} className={classes.item}>
+              <Card className={classes.card} variant="outlined">
+                <CardContent>
+                  <Typography variant="body2" color="textSecondary">
+                    {fm('generateValidationList.selectedYouthHeaded')}
+                  </Typography>
+                  <Typography className={classes.cardNumber}>
+                    {validationListResult?.selectedYouthHouseholds?.toLocaleString() ?? 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={4} className={classes.item}>
+              <Card className={classes.card} variant="outlined">
+                <CardContent>
+                  <Typography variant="body2" color="textSecondary">
+                    {fm('generateValidationList.selectedReserve')}
+                  </Typography>
+                  <Typography className={classes.cardNumber}>
+                    {validationListResult?.reserveHouseholds?.toLocaleString() ?? 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </>
+          )}
+
+          {/* ── Action buttons (only after generate) ── */}
+          {generatedValidationLists && !errorValidationLists && (
           <Grid item xs={12}>
-            <Typography className={classes.title}>
-              {fm('generateValidationList.summaryTitle')}
-            </Typography>
-            <Typography className={classes.summaryContext} variant="subtitle1">
-              {fm('generateValidationList.catchment')}
-              {': '}
-              {generatedCatchment?.name ?? generatedCatchment?.code ?? '-'}
-            </Typography>
+            <div className={classes.actionsRow}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setShowPreview(true)}
+              >
+                {fm('generateValidationList.previewHouseholdsButton')}
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={exportToCSV}
+                disabled={!validationListResult?.fileBase64}
+              >
+                {fm('export.label')}
+              </Button>
+            </div>
           </Grid>
+          )}
 
-          <Grid item xs={12} sm={6} md={4} className={classes.item}>
-            <Card className={classes.card} variant="outlined">
-              <CardContent>
-                <Typography variant="body2" color="textSecondary">
-                  {fm('generateValidationList.totalHouseholds')}
-                </Typography>
-                <Typography className={classes.cardNumber}>
-                  {validationListResult?.totalHouseholds?.toLocaleString() ?? 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4} className={classes.item}>
-            <Card className={classes.card} variant="outlined">
-              <CardContent>
-                <Typography variant="body2" color="textSecondary">
-                  {fm('generateValidationList.totalIndividuals')}
-                </Typography>
-                <Typography className={classes.cardNumber}>
-                  {validationListResult?.totalIndividuals?.toLocaleString() ?? 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4} className={classes.item}>
-            <Card className={classes.card} variant="outlined">
-              <CardContent>
-                <Typography variant="body2" color="textSecondary">
-                  {fm('generateValidationList.selectedHouseholds')}
-                </Typography>
-                <Typography className={classes.cardNumber}>
-                  {validationListResult?.selectedHouseholds?.toLocaleString() ?? 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4} className={classes.item}>
-            <Card className={classes.card} variant="outlined">
-              <CardContent>
-                <Typography variant="body2" color="textSecondary">
-                  {fm('generateValidationList.selectedIndividuals')}
-                </Typography>
-                <Typography className={classes.cardNumber}>
-                  {validationListResult?.selectedIndividuals?.toLocaleString() ?? 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4} className={classes.item}>
-            <Card className={classes.card} variant="outlined">
-              <CardContent>
-                <Typography variant="body2" color="textSecondary">
-                  {fm('generateValidationList.selectedFemaleHeaded')}
-                </Typography>
-                <Typography className={classes.cardNumber}>
-                  {validationListResult?.selectedFemaleHeadedHouseholds?.toLocaleString() ?? 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4} className={classes.item}>
-            <Card className={classes.card} variant="outlined">
-              <CardContent>
-                <Typography variant="body2" color="textSecondary">
-                  {fm('generateValidationList.selectedYouthHeaded')}
-                </Typography>
-                <Typography className={classes.cardNumber}>
-                  {validationListResult?.selectedYouthHouseholds?.toLocaleString() ?? 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4} className={classes.item}>
-            <Card className={classes.card} variant="outlined">
-              <CardContent>
-                <Typography variant="body2" color="textSecondary">
-                  {fm('generateValidationList.selectedReserve')}
-                </Typography>
-                <Typography className={classes.cardNumber}>
-                  {validationListResult?.reserveHouseholds?.toLocaleString() ?? 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+          {/* ── Preview dialog ── */}
+          <HouseholdPreviewDialog
+            open={showPreview}
+            onClose={() => setShowPreview(false)}
+            filters={edited}
+          />
+          {errorValidationLists && <Typography color="error" role="alert">{errorValidationLists.message ?? String(errorValidationLists)}</Typography>}
         </>
       )}
-
-      {/* ── Action buttons (only after generate) ── */}
-      {generatedValidationLists && (
-        <Grid item xs={12}>
-          <div className={classes.actionsRow}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => setShowPreview(true)}
-            >
-              {fm('generateValidationList.previewHouseholdsButton')}
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={exportToCSV}
-              disabled={!validationListResult?.fileBase64}
-            >
-              {fm('export.label')}
-            </Button>
-          </div>
-        </Grid>
-      )}
-
-      {/* ── Preview dialog ── */}
-      <HouseholdPreviewDialog
-        open={showPreview}
-        onClose={() => setShowPreview(false)}
-        filters={edited}
-      />
     </Grid>
   );
 }
@@ -286,10 +322,14 @@ const mapStateToProps = (state) => ({
   generatingValidationLists: state.householdValidation?.generatingValidationLists,
   generatedValidationLists: state.householdValidation?.generatedValidationLists,
   validationListResult: state.householdValidation?.validationListResult ?? {},
+  errorValidationLists: state.householdValidation?.errorValidationLists,
+  rights: state.core?.user?.i_user?.rights ?? [],
 });
 
 const mapDispatchToProps = (dispatch) => bindActionCreators({
   generateValidationList,
+  clearValidationLists,
+  clearValidationPreview,
 }, dispatch);
 
 export default withModulesManager(

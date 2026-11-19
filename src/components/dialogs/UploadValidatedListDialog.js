@@ -31,6 +31,7 @@ import { bindActionCreators } from 'redux';
 import {
   HOUSEHOLD_VALIDATION_MODULE_NAME,
   RIGHT_HOUSEHOLD_VALIDATION_UPLOAD,
+  RIGHT_HOUSEHOLD_VALIDATION_ERROR_REPORT,
   RIGHT_INDIVIDUAL_CREATE,
   KYC_DETAILS_WORKFLOW_NAME,
   KYC_DETAILS_WORKFLOW_GROUP,
@@ -221,6 +222,7 @@ function UploadValidatedListDialog({
   const abortControllerRef = useRef(null);
   const isMountedRef = useRef(true);
   const canUploadKycDetails = rights.includes(RIGHT_INDIVIDUAL_CREATE);
+  const canDownloadErrors = rights.includes(RIGHT_HOUSEHOLD_VALIDATION_ERROR_REPORT);
   const uploading = uploadingValidationList || uploadingKycDetails;
 
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
@@ -343,6 +345,7 @@ function UploadValidatedListDialog({
   };
 
   const onDownloadRejectedHouseholds = () => {
+    if (!canDownloadErrors) return;
     if (fetchedRejectedHouseholds && rejectedHouseholdsFileBase64) {
       const downloaded = downloadRejectedHouseholds(
         rejectedHouseholdsFileBase64,
@@ -632,7 +635,7 @@ function UploadValidatedListDialog({
             </Button>
           </div>
           <div className={classes.actionsRight}>
-            {canDownloadRejectedHouseholds && (
+            {canDownloadErrors && canDownloadRejectedHouseholds && (
               <Button
                 variant="contained"
                 color="primary"

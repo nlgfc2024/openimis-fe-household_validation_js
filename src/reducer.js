@@ -55,6 +55,7 @@ function reducer(state = INITIAL_STATE, action) {
     case REQUEST(ACTION_TYPE.GENERATE_VALIDATION_LIST):
       return {
         ...state,
+        generationRequestId: action.meta?.requestId,
         generatingValidationLists: true,
         generatedValidationLists: false,
         validationListResult: {},
@@ -68,6 +69,7 @@ function reducer(state = INITIAL_STATE, action) {
       };
 
     case SUCCESS(ACTION_TYPE.GENERATE_VALIDATION_LIST):
+      if (state.generationRequestId !== action.meta?.requestId) return state;
       return {
         ...state,
         generatingValidationLists: false,
@@ -77,6 +79,7 @@ function reducer(state = INITIAL_STATE, action) {
       };
 
     case ERROR(ACTION_TYPE.GENERATE_VALIDATION_LIST):
+      if (state.generationRequestId !== action.meta?.requestId) return state;
       return {
         ...state,
         generatingValidationLists: false,
@@ -86,6 +89,7 @@ function reducer(state = INITIAL_STATE, action) {
     case CLEAR(ACTION_TYPE.GENERATE_VALIDATION_LIST):
       return {
         ...state,
+        generationRequestId: null,
         generatingValidationLists: false,
         generatedValidationLists: false,
         validationListResult: {},
@@ -176,6 +180,7 @@ function reducer(state = INITIAL_STATE, action) {
     case REQUEST(ACTION_TYPE.FETCH_VALIDATION_PREVIEW):
       return {
         ...state,
+        previewRequestId: action.meta?.requestId,
         fetchingValidationPreview: true,
         fetchedValidationPreview: false,
         validationPreviewData: [],
@@ -185,6 +190,7 @@ function reducer(state = INITIAL_STATE, action) {
       };
 
     case SUCCESS(ACTION_TYPE.FETCH_VALIDATION_PREVIEW): {
+      if (state.previewRequestId !== action.meta?.requestId) return state;
       const previewData = action.payload.data?.householdValidationPreview;
       return {
         ...state,
@@ -198,6 +204,7 @@ function reducer(state = INITIAL_STATE, action) {
     }
 
     case ERROR(ACTION_TYPE.FETCH_VALIDATION_PREVIEW):
+      if (state.previewRequestId !== action.meta?.requestId) return state;
       return {
         ...state,
         fetchingValidationPreview: false,
@@ -207,6 +214,7 @@ function reducer(state = INITIAL_STATE, action) {
     case CLEAR(ACTION_TYPE.FETCH_VALIDATION_PREVIEW):
       return {
         ...state,
+        previewRequestId: null,
         fetchingValidationPreview: false,
         fetchedValidationPreview: false,
         validationPreviewData: [],

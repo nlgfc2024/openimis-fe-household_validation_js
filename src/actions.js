@@ -15,6 +15,8 @@ import {
   VALIDATION_PREVIEW_PROJECTION,
 } from './constants';
 
+let validationRequestSequence = 0;
+
 function buildGenerateValidationListFilters(filters) {
   const lines = [];
   if (filters?.district?.code) {
@@ -75,6 +77,7 @@ export function generateValidationList(filters) {
     {
       actionType: ACTION_TYPE.GENERATE_VALIDATION_LIST,
       requestedDateTime,
+      requestId: ++validationRequestSequence,
     },
   );
 }
@@ -129,7 +132,7 @@ export function fetchHouseholdValidationPreview(filters, pageSize = 10, offset =
   const args = buildGenerateValidationListFilters(filters);
   args.push(`first: ${parseInt(pageSize, 10)}`, `offset: ${parseInt(offset, 10)}`);
   const payload = formatPageQueryWithCount('householdValidationPreview', args, VALIDATION_PREVIEW_PROJECTION);
-  return graphql(payload, ACTION_TYPE.FETCH_VALIDATION_PREVIEW);
+  return graphql(payload, ACTION_TYPE.FETCH_VALIDATION_PREVIEW, { requestId: ++validationRequestSequence });
 }
 
 export const clearValidationLists = () => (dispatch) => {
