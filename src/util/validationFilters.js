@@ -25,8 +25,19 @@ const matchProgram = (program, programs) => {
 // Resolves which filters should be shown/required for the current selection.
 // When the config defines "programs", a Program picker is shown and the active
 // location filters depend on which program is selected.
-export const resolveActiveFilterSet = (config, program) => {
+export const resolveActiveFilterSet = (config, program, contract) => {
   const programs = config?.programs ?? [];
+  if (contract?.subject === 'INDIVIDUAL') {
+    const matched = matchProgram(program, programs);
+    return {
+      showProgramPicker: true,
+      programUnmatched: false,
+      filters: [...new Set((matched?.filters ?? ['district', 'ta', 'gvh', 'village', 'targetCount'])
+        .filter((key) => key !== 'lastVerifiedDate').concat('excludeValidated'))],
+      requiredFilters: ['program', ...(matched?.requiredFilters ?? ['district'])
+        .filter((key) => !['excludeVerifiedAfter', 'lastVerifiedDate'].includes(key))],
+    };
+  }
   if (programs.length > 0) {
     const matched = matchProgram(program, programs);
     const programUnmatched = !!program && !matched;

@@ -2,6 +2,7 @@
 /* eslint-disable camelcase */
 import {
   graphql,
+  graphqlWithVariables,
   formatGQLString,
   formatPageQueryWithCount,
 } from '@openimis/fe-core';
@@ -14,6 +15,33 @@ import {
   UPLOAD_VALIDATION_LIST_RESULT_PROJECTION,
   VALIDATION_PREVIEW_PROJECTION,
 } from './constants';
+
+let validationRequestSequence = 0;
+
+export const failIndividualValidation = (meta, error) => ({
+  type: ERROR(ACTION_TYPE.INDIVIDUAL_VALIDATION), meta, payload: { message: error.message }, error: true,
+});
+
+export const requestIndividualValidation = (requestKey, operation, variables) => async (dispatch) => {
+  const meta = { requestKey, requestId: ++validationRequestSequence };
+  const type = ACTION_TYPE.INDIVIDUAL_VALIDATION;
+  try {
+    return await dispatch(graphqlWithVariables(
+      operation,
+      variables,
+      [REQUEST(type), SUCCESS(type), ERROR(type)],
+      meta,
+    ));
+  } catch (error) {
+    const action = failIndividualValidation(meta, error);
+    dispatch(action);
+    return action;
+  }
+};
+
+export const clearIndividualValidation = (requestKey) => ({
+  type: CLEAR(ACTION_TYPE.INDIVIDUAL_VALIDATION), meta: { requestKey },
+});
 
 function buildGenerateValidationListFilters(filters) {
   const lines = [];
@@ -75,6 +103,7 @@ export function generateValidationList(filters) {
     {
       actionType: ACTION_TYPE.GENERATE_VALIDATION_LIST,
       requestedDateTime,
+      requestId: ++validationRequestSequence,
     },
   );
 }
@@ -129,7 +158,7 @@ export function fetchHouseholdValidationPreview(filters, pageSize = 10, offset =
   const args = buildGenerateValidationListFilters(filters);
   args.push(`first: ${parseInt(pageSize, 10)}`, `offset: ${parseInt(offset, 10)}`);
   const payload = formatPageQueryWithCount('householdValidationPreview', args, VALIDATION_PREVIEW_PROJECTION);
-  return graphql(payload, ACTION_TYPE.FETCH_VALIDATION_PREVIEW);
+  return graphql(payload, ACTION_TYPE.FETCH_VALIDATION_PREVIEW, { requestId: ++validationRequestSequence });
 }
 
 export const clearValidationLists = () => (dispatch) => {

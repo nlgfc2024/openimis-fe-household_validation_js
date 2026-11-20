@@ -3,11 +3,14 @@ export const HOUSEHOLD_VALIDATION_MAIN_MENU_CONTRIBUTION_KEY = 'householdValidat
 export const HOUSEHOLD_VALIDATION_CONFIG_MODULE_NAME = 'fe-household_validation';
 // Actions slot rendered in the header of the individual module's GroupSearcher
 export const INDIVIDUAL_GROUP_MENU_CONTRIBUTION_KEY = 'individual.group.GroupMenu';
+export const INDIVIDUAL_VALIDATE_CONTRIBUTION_KEY = 'individual.IndividualsUploadDialog';
 
 // Rights — must match the codes the BE (openimis-be-household_validation)
 export const RIGHT_HOUSEHOLD_VALIDATION_SEARCH = 958001;
 export const RIGHT_HOUSEHOLD_VALIDATION_GENERATE = 958001;
 export const RIGHT_HOUSEHOLD_VALIDATION_UPLOAD = 958002;
+export const RIGHT_HOUSEHOLD_VALIDATION_HISTORY = 958003;
+export const RIGHT_HOUSEHOLD_VALIDATION_ERROR_REPORT = 958004;
 export const RIGHT_INDIVIDUAL_CREATE = 159002;
 export const KYC_DETAILS_WORKFLOW_NAME = 'Python KYC Details';
 export const KYC_DETAILS_WORKFLOW_GROUP = 'individual';

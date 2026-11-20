@@ -31,6 +31,7 @@ import { bindActionCreators } from 'redux';
 import {
   HOUSEHOLD_VALIDATION_MODULE_NAME,
   RIGHT_HOUSEHOLD_VALIDATION_UPLOAD,
+  RIGHT_HOUSEHOLD_VALIDATION_ERROR_REPORT,
   RIGHT_INDIVIDUAL_CREATE,
   KYC_DETAILS_WORKFLOW_NAME,
   KYC_DETAILS_WORKFLOW_GROUP,
@@ -41,6 +42,7 @@ import {
   fetchRejectedHouseholds,
   uploadValidationList,
 } from '../../actions';
+import { openValidationFile } from '../../util/individualValidation';
 
 const RESULT_FIELDS = [
   'rowsRead',
@@ -166,23 +168,7 @@ const multipartApiHeaders = () => {
 const downloadRejectedHouseholds = (fileBase64, fileName) => {
   if (!fileBase64) return false;
   try {
-    const byteCharacters = atob(fileBase64);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let index = 0; index < byteCharacters.length; index += 1) {
-      byteNumbers[index] = byteCharacters.charCodeAt(index);
-    }
-    const blob = new Blob(
-      [new Uint8Array(byteNumbers)],
-      { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
-    );
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName ?? 'rejected_households.xlsx';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    openValidationFile({ fileBase64, fileName: fileName ?? 'rejected_households.xlsx' });
     return true;
   } catch {
     return false;
@@ -221,6 +207,7 @@ function UploadValidatedListDialog({
   const abortControllerRef = useRef(null);
   const isMountedRef = useRef(true);
   const canUploadKycDetails = rights.includes(RIGHT_INDIVIDUAL_CREATE);
+  const canDownloadErrors = rights.includes(RIGHT_HOUSEHOLD_VALIDATION_ERROR_REPORT);
   const uploading = uploadingValidationList || uploadingKycDetails;
 
   const fm = (id) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, id);
@@ -343,6 +330,7 @@ function UploadValidatedListDialog({
   };
 
   const onDownloadRejectedHouseholds = () => {
+    if (!canDownloadErrors) return;
     if (fetchedRejectedHouseholds && rejectedHouseholdsFileBase64) {
       const downloaded = downloadRejectedHouseholds(
         rejectedHouseholdsFileBase64,
@@ -632,7 +620,7 @@ function UploadValidatedListDialog({
             </Button>
           </div>
           <div className={classes.actionsRight}>
-            {canDownloadRejectedHouseholds && (
+            {canDownloadErrors && canDownloadRejectedHouseholds && (
               <Button
                 variant="contained"
                 color="primary"

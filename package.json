@@ -11,6 +11,7 @@
     "npm": ">=5"
   },
   "scripts": {
+    "test": "node test/individual-validation.test.cjs",
     "build": "rollup -c",
     "lint": "eslint src --ext .js",
     "start": "rollup -c -w",
@@ -18,7 +19,10 @@
     "prepare": "npm run build"
   },
   "peerDependencies": {
-    "react-intl": "^5.8.1"
+    "react": "^16.14.0 || ^17.0.0 || ^18.0.0",
+    "react-intl": "^5.8.1",
+    "react-redux": "^7.2.0 || ^8.0.0",
+    "redux": "^4.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
@@ -39,6 +43,12 @@
     "eslint-plugin-jsx-a11y": "^6.5.1",
     "eslint-plugin-react": "^7.28.0",
     "eslint-plugin-react-hooks": "^4.3.0",
+    "graphql": "16.11.0",
+    "react": "16.14.0",
+    "react-dom": "^16.14.0",
+    "react-redux": "^7.2.9",
+    "react-test-renderer": "16.14.0",
+    "redux": "^4.2.1",
     "rollup": "^2.10.0"
   },
   "files": [

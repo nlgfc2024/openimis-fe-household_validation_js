@@ -1,6 +1,6 @@
 import React from 'react';
 import { injectIntl } from 'react-intl';
-import { Grid } from '@material-ui/core';
+import { Checkbox, FormControlLabel, Grid } from '@material-ui/core';
 import { withTheme, withStyles } from '@material-ui/core/styles';
 import {
   NumberInput,
@@ -34,10 +34,13 @@ const EMPTY_VALUE = {
 const isFilled = (value) => (Array.isArray(value) ? value.length > 0 : !!(value?.uuid || value?.code));
 
 function ValidationListFiltersPanel({
-  intl, classes, filters, onChangeFilters, modulesManager,
+  intl, classes, filters, onChangeFilters, modulesManager, contract, programmes = [],
 }) {
   const filtersConfig = getValidationListFiltersConfig(modulesManager);
-  const { showProgramPicker, filters: activeFilters } = resolveActiveFilterSet(filtersConfig, filters?.program);
+  const { showProgramPicker: configuredProgramPicker, filters: activeFilters } = resolveActiveFilterSet(filtersConfig, filters?.program, contract);
+  const locationLabel = (key) => (contract?.subject === 'INDIVIDUAL'
+    ? undefined : formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, `filter.${key}`));
+  const showProgramPicker = configuredProgramPicker || programmes.some((item) => item.subject === 'INDIVIDUAL');
   const hasMicroCatchmentFilter = activeFilters.includes('microCatchment');
 
   const catchmentLocationUuids = (links) => new Set(
@@ -88,11 +91,7 @@ function ValidationListFiltersPanel({
   };
 
   const onChangeProgram = (program) => {
-    onChangeFilters({
-      ...filters,
-      program,
-      ...EMPTY_VALUE,
-    });
+    onChangeFilters({ program, ...EMPTY_VALUE });
   };
 
   const onChangeDistrict = (district) => {
@@ -134,7 +133,7 @@ function ValidationListFiltersPanel({
               onChange={onChangeDistrict}
               filterLabels={false}
               readOnly={showProgramPicker && !filters?.program}
-              label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.district')}
+              label={locationLabel('district')}
             />
           </Grid>
         );
@@ -168,7 +167,7 @@ function ValidationListFiltersPanel({
               filterOptions={hasMicroCatchmentFilter
                 ? filterCatchmentLocations(filters?.microCatchment?.traditionalAuthorities)
                 : undefined}
-              label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.ta')}
+              label={locationLabel('ta')}
             />
           </Grid>
         );
@@ -193,18 +192,20 @@ function ValidationListFiltersPanel({
               multiple
               parentLocations={(filters?.tas ?? []).map((ta) => ta.uuid)}
               value={filters?.gvhs ?? []}
-              readOnly={isReadOnly('gvh')}
+              readOnly={isReadOnly('gvh') || !(filters?.tas?.length)}
               onChange={onChangeGvhs}
               filterOptions={(options) => {
+                if (!hasMicroCatchmentFilter && !activeFilters.includes('hotspot')) return options;
                 const catchmentGvhUuids = catchmentLocationUuids(filters?.microCatchment?.gvhs);
                 const hotspotGvhUuids = new Set(
                   (filters?.hotspot?.villages ?? []).map((village) => village?.parent?.uuid).filter(Boolean),
                 );
                 return options.filter(
-                  (option) => catchmentGvhUuids.has(option.uuid) && hotspotGvhUuids.has(option.uuid),
+                  (option) => (!hasMicroCatchmentFilter || catchmentGvhUuids.has(option.uuid))
+                    && (!activeFilters.includes('hotspot') || hotspotGvhUuids.has(option.uuid)),
                 );
               }}
-              label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.gvh')}
+              label={locationLabel('gvh')}
             />
           </Grid>
         );
@@ -219,12 +220,13 @@ function ValidationListFiltersPanel({
               readOnly={isReadOnly('village')}
               onChange={(value) => onChange('villages')(value ?? [])}
               filterOptions={(options) => {
+                if (!activeFilters.includes('hotspot')) return options;
                 const hotspotVillageUuids = new Set(
                   (filters?.hotspot?.villages ?? []).map((village) => village?.uuid).filter(Boolean),
                 );
                 return options.filter((option) => hotspotVillageUuids.has(option.uuid));
               }}
-              label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'filter.village')}
+              label={locationLabel('village')}
             />
           </Grid>
         );
@@ -245,11 +247,20 @@ function ValidationListFiltersPanel({
           <Grid item xs={12} md={4} className={classes.item} key="targetCount">
             <NumberInput
               module={HOUSEHOLD_VALIDATION_MODULE_NAME}
-              label="filter.totalHouseholdsTarget"
+              label={contract?.subject === 'INDIVIDUAL' ? 'filter.totalIndividualsTarget' : 'filter.totalHouseholdsTarget'}
               min={1}
               required
               value={filters?.targetCount}
               onChange={(value) => onChange('targetCount')(value)}
+            />
+          </Grid>
+        );
+      case 'excludeValidated':
+        return (
+          <Grid item xs={12} className={classes.item} key="excludeValidated">
+            <FormControlLabel
+              control={<Checkbox checked={!!filters?.excludeValidated} onChange={(event) => onChange('excludeValidated')(event.target.checked)} />}
+              label={formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, 'individualValidation.excludeValidated')}
             />
           </Grid>
         );

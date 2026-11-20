@@ -10,9 +10,11 @@ import messages_en from './translations/en.json';
 import reducer from './reducer';
 import HouseholdValidationPage from './pages/HouseholdValidationPage';
 import UploadValidatedListDialog from './components/dialogs/UploadValidatedListDialog';
+import IndividualValidateDialog from './components/dialogs/IndividualValidateDialog';
 import {
   HOUSEHOLD_VALIDATION_MODULE_NAME,
   INDIVIDUAL_GROUP_MENU_CONTRIBUTION_KEY,
+  INDIVIDUAL_VALIDATE_CONTRIBUTION_KEY,
   RIGHT_HOUSEHOLD_VALIDATION_SEARCH,
 } from './constants';
 
@@ -38,6 +40,7 @@ const DEFAULT_CONFIG = {
     { key: `${HOUSEHOLD_VALIDATION_MODULE_NAME}.UploadValidatedListDialog`, ref: UploadValidatedListDialog },
   ],
   [INDIVIDUAL_GROUP_MENU_CONTRIBUTION_KEY]: UploadValidatedListDialog,
+  [INDIVIDUAL_VALIDATE_CONTRIBUTION_KEY]: IndividualValidateDialog,
 };
 
 export const HouseholdValidationModule = (cfg) => ({ ...DEFAULT_CONFIG, ...cfg });

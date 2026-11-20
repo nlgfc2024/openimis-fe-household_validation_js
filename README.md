@@ -2,6 +2,79 @@
 
 openIMIS Frontend Household Validation module (`@openimis/fe-household_validation`). Provides the "Generate Validation List" page: a configurable filter panel, list generation/preview against the `openimis-be-household_validation` backend, and the "Upload Validated List" action contributed into the individual/group search screen.
 
+## Individual validation
+
+The generation page reads `validationProgrammes` and resolves the selected benefit-plan code's backend `subject`. `INDIVIDUAL` programmes use person counts, individual-location filters, saved-list preview and Excel generation. Household programmes retain their existing generation, preview and upload paths. A programme change clears geography, targets, date/exclusion filters and generated results. Pending responses are invalidated when their filters or programme change.
+
+When an individual programme is configured, the programme picker also appears for deployments using the historical default frontend configuration. The frontend never infers the subject from a programme name. Individual generation requires a confirmed backend contract. Historical household generation remains available when the programme query is unavailable; a benefit plan explicitly marked INDIVIDUAL stays disabled until its contract is confirmed.
+
+Individual defaults use the existing R/D/W/V pickers (`district`, `ta`, `gvh`, `village`). UMEP names these City, Constituency, Ward and Neighbourhood. Ward options are direct children of the selected constituencies, and neighbourhood options are children of the selected wards. Constituency remains a generation filter even when the backend workbook omits that display column. Picker terminology comes from the deployment language pack, including `location.Location0Picker.label` through `location.Location3Picker.label`. Retain other frontend programme entries when applying configuration:
+
+```json
+{
+  "validationListFilters": {
+    "programs": [
+      {
+        "code": "UMEP",
+        "filters": ["district", "ta", "gvh", "village", "targetCount"],
+        "requiredFilters": ["district"]
+      }
+    ]
+  }
+}
+```
+
+`excludeValidated` is added for individual programmes and defaults to false; household `lastVerifiedDate` is omitted. Counts/targets refer to people outside active households. A target is optional unless required by the deployment's frontend filter configuration.
+
+The individual generation response contains the workbook from the backend's saved selection. Preview requests `individualValidationList` by that batch ID and paginates its saved rows, without querying live candidates. It shows issued and currently available/deleted/missing/inaccessible counts. Protected display fields and configured business columns come from the saved response. Export from the summary downloads the generated snapshot; export inside the preview requests an authorized re-export of that batch.
+
+### Validate action and results
+
+`IndividualValidateDialog` is contributed under the **action contribution** key `individual.IndividualsUploadDialog`. It does not register or replace the published reference with that name. Individuals' ordinary Upload and Upload History, and `individual.group.GroupMenu`'s household upload contribution, remain registered. The host only renders this contribution on editable screens; the contributed dialog also honors an explicit `readOnly` prop.
+
+The dialog appears only when an individual backend contract is configured and the caller can query and upload validation workbooks. It accepts `.xlsx` files, displays backend decision labels and blank-row behavior, and offers separate dry-run and commit buttons. A dry run saves no attempt and never refreshes Individuals. A committed result with valid rows invokes the host's `refetch` callback, including partial successes. The workbook's saved batch determines processing; the dialog does not supply a UI-selected programme or hardcoded UMEP fields.
+
+The agreed backend decisions are VERIFIED and NOT_VERIFIED. Blank decisions skip all row changes. Applicable business fields are required for VERIFIED; NOT_VERIFIED may omit them, while supplied values still undergo backend validation. Per-attempt feedback includes applied/skipped/error counts and actual or prospective individual updates. Committed workbooks cannot be resubmitted accidentally through the same dialog result; choose the corrected file to submit another attempt.
+
+Validation history is separate from ordinary individual import history. With history permission, choose a recent accessible issued list by programme, generation date, filename and selected-person count. The list picker loads 20 summaries at a time and can load older lists; no batch UUID needs to be typed. A committed upload selects its returned batch and attempt automatically. Choosing another workbook preserves the selected history batch, attempt and page. The selected batch/attempt pair is used for both result rows and CSV error downloads. Result columns come from backend `raw_row` data, including configured workbook columns. Access-redacted rows are displayed as returned by the backend. Dry-run errors are shown inline; a dry run has no persisted error report.
+
+Attempt results load 20 rows per page using `first`/`offset`, show the total row count and provide Previous/Next controls. Changing attempts or batches resets the page. Preview export and history error downloads have separate request state, so paging does not cancel an in-flight download. Error downloads contain the entire selected attempt's error report, independently of the page being viewed.
+
+### Permissions and backend dependencies
+
+| Backend right | Frontend behavior |
+| --- | --- |
+| `958001` | Generation route/menu, programme contract, generation and generated-workbook download |
+| `958002` | Individual Validate/dry-run/commit and existing household upload |
+| `958003` | Validation attempt history/results and saved-list preview/re-export |
+| `958004` | Individual attempt error downloads and household error-report action |
+
+No new rights are introduced. Validate additionally needs `958001` to discover configured individual programmes. Saved-list preview/re-export additionally require `958001` in this UI, and **the backend currently requires `958003`** for those saved reads; a user with only `958001` can still generate and download the initial workbook. Error-report permission is independent of history permission: an uploader with `958004` can download errors for their returned committed attempt without loading history. Backend access checks remain authoritative.
+
+The module uses these backend APIs:
+
+- `validationProgrammes`: permitted programme subjects and decision contracts.
+- `generateIndividualValidationList`: issue the saved list and initial workbook.
+- `individualValidationList` and `individualValidationListExport`: authorized saved preview and re-export.
+- `uploadIndividualValidationList`: dry run and committed validation.
+- `individualValidationBatches`: paged accessible issued-list summaries for the history picker.
+- `individualValidationAttempts`, `individualValidationAttemptRows` and `individualValidationErrorReport`: attempt history, paged results and complete error downloads.
+
+Individual requests use fe-core's `graphqlWithVariables` through Redux, retaining the application's session-expiry prompt and error reporting. Request IDs reject late responses after resets, edits and unmounts. Programme-discovery failures are shown with a retry action; they are distinct from an empty configured programme list. Workbook and report downloads share one base64 decode helper and fe-core's `openBlob` download lifecycle. Deliver backend beneficiary-update preservation with the workflow so later registry uploads retain validation decisions.
+
+### Verification
+
+Use Node 22 or newer for the test tooling:
+
+```bash
+npm install --ignore-scripts --no-package-lock
+npm test
+npm run lint
+npm run build
+```
+
+Component and request regressions cover subject/filter dispatch, UMEP's complete City/Constituency/Ward/Neighbourhood picker chain, configured columns, saved pagination/export, independent permissions/read-only actions, contribution preservation, dry-run versus commit, host refresh, batch/attempt-scoped errors and stale response invalidation. These use mocked backend responses; full frontend assembly compilation runs in the existing Malawi CI job.
+
 ## Installation
 
 Register the module in the shell app's `openimis-fe_js/src/modules.js` (and `openimis.json`) the same way as other openIMIS frontend modules — see the shell app's own README for the general pattern. This module registers itself under the key `fe-household_validation`, which is also the key used to look up its `ModuleConfiguration` (see "Configuration" below).
@@ -48,6 +121,8 @@ All of these filters are shown; only District, Micro Catchment, and Total Househ
 | `targetCount` | Total Households Target (number input) |
 
 Filters render in the order listed in `filters`, and each one is read-only until the filter immediately before it in that order has a value (a purely positional dependency — there's no hardcoded parent/child relationship baked into the component). `requiredFilters` controls which of the currently active filters must be filled in before the Generate button enables; it's independent of `filters`, so a field can be shown but optional.
+
+After filters are edited, the missing-filters hint lists only unfilled entries from the active programme's `requiredFilters`. It uses the inputs' translated labels (including the location language pack for individual geography) and the household or individual target label. Language-pack overrides of `householdValidation.generateValidationList.missingRequiredFilters` should retain the `{filters}` placeholder.
 
 ### Program-based config (e.g. Jobs Now)
 
