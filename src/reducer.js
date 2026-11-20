@@ -10,6 +10,7 @@ import {
 } from './util/action-type';
 
 export const ACTION_TYPE = {
+  INDIVIDUAL_VALIDATION: 'INDIVIDUAL_VALIDATION',
   // Generate validation list mutation
   GENERATE_VALIDATION_LIST: 'GENERATE_VALIDATION_LIST',
   // Upload validated list mutation
@@ -21,6 +22,7 @@ export const ACTION_TYPE = {
 };
 
 const INITIAL_STATE = {
+  individualRequests: {},
   // Generate validation list
   generatingValidationLists: false,
   generatedValidationLists: false,
@@ -51,6 +53,39 @@ const INITIAL_STATE = {
 
 function reducer(state = INITIAL_STATE, action) {
   switch (action.type) {
+    case REQUEST(ACTION_TYPE.INDIVIDUAL_VALIDATION):
+      return {
+        ...state,
+        individualRequests: {
+          ...state.individualRequests,
+          [action.meta.requestKey]: { requestId: action.meta.requestId, loading: true, error: null },
+        },
+      };
+    case SUCCESS(ACTION_TYPE.INDIVIDUAL_VALIDATION):
+    case ERROR(ACTION_TYPE.INDIVIDUAL_VALIDATION): {
+      const { requestKey, requestId } = action.meta;
+      if (state.individualRequests?.[requestKey]?.requestId !== requestId) return state;
+      const payload = action.payload ?? {};
+      const error = formatGraphQLError(payload.response ?? payload)
+        ?? (action.error ? formatServerError(payload) : null);
+      return {
+        ...state,
+        individualRequests: {
+          ...state.individualRequests,
+          [requestKey]: {
+            requestId,
+            loading: false,
+            error: error?.detail || error?.message || (action.error ? payload.message : null)
+              || (!payload.data ? 'No validation response received.' : null),
+          },
+        },
+      };
+    }
+    case CLEAR(ACTION_TYPE.INDIVIDUAL_VALIDATION): {
+      const individualRequests = { ...state.individualRequests };
+      delete individualRequests[action.meta.requestKey];
+      return { ...state, individualRequests };
+    }
     // -------- GENERATE VALIDATION LIST MUTATION --------
     case REQUEST(ACTION_TYPE.GENERATE_VALIDATION_LIST):
       return {

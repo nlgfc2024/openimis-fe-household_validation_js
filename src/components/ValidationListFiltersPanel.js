@@ -37,12 +37,9 @@ function ValidationListFiltersPanel({
   intl, classes, filters, onChangeFilters, modulesManager, contract, programmes = [],
 }) {
   const filtersConfig = getValidationListFiltersConfig(modulesManager);
-  const { showProgramPicker: configuredProgramPicker, filters: activeFilters, labels } = resolveActiveFilterSet(filtersConfig, filters?.program, contract);
-  const filterLabel = (key) => labels[key] ?? formatMessage(
-    intl,
-    HOUSEHOLD_VALIDATION_MODULE_NAME,
-    contract?.subject === 'INDIVIDUAL' ? `individualValidation.location.${key}` : `filter.${key}`,
-  );
+  const { showProgramPicker: configuredProgramPicker, filters: activeFilters } = resolveActiveFilterSet(filtersConfig, filters?.program, contract);
+  const locationLabel = (key) => (contract?.subject === 'INDIVIDUAL'
+    ? undefined : formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, `filter.${key}`));
   const showProgramPicker = configuredProgramPicker || programmes.some((item) => item.subject === 'INDIVIDUAL');
   const hasMicroCatchmentFilter = activeFilters.includes('microCatchment');
 
@@ -136,7 +133,7 @@ function ValidationListFiltersPanel({
               onChange={onChangeDistrict}
               filterLabels={false}
               readOnly={showProgramPicker && !filters?.program}
-              label={filterLabel('district')}
+              label={locationLabel('district')}
             />
           </Grid>
         );
@@ -170,7 +167,7 @@ function ValidationListFiltersPanel({
               filterOptions={hasMicroCatchmentFilter
                 ? filterCatchmentLocations(filters?.microCatchment?.traditionalAuthorities)
                 : undefined}
-              label={filterLabel('ta')}
+              label={locationLabel('ta')}
             />
           </Grid>
         );
@@ -193,11 +190,9 @@ function ValidationListFiltersPanel({
             <PublishedComponent
               pubRef="location.MwGVHPicker"
               multiple
-              parentLocations={activeFilters.includes('ta')
-                ? (filters?.tas ?? []).map((ta) => ta.uuid)
-                : [filters?.district?.uuid].filter(Boolean)}
+              parentLocations={(filters?.tas ?? []).map((ta) => ta.uuid)}
               value={filters?.gvhs ?? []}
-              readOnly={isReadOnly('gvh')}
+              readOnly={isReadOnly('gvh') || !(filters?.tas?.length)}
               onChange={onChangeGvhs}
               filterOptions={(options) => {
                 if (!hasMicroCatchmentFilter && !activeFilters.includes('hotspot')) return options;
@@ -210,7 +205,7 @@ function ValidationListFiltersPanel({
                     && (!activeFilters.includes('hotspot') || hotspotGvhUuids.has(option.uuid)),
                 );
               }}
-              label={filterLabel('gvh')}
+              label={locationLabel('gvh')}
             />
           </Grid>
         );
@@ -231,7 +226,7 @@ function ValidationListFiltersPanel({
                 );
                 return options.filter((option) => hotspotVillageUuids.has(option.uuid));
               }}
-              label={filterLabel('village')}
+              label={locationLabel('village')}
             />
           </Grid>
         );

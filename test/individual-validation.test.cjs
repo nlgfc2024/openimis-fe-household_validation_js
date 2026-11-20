@@ -11,6 +11,7 @@ const { IndividualValidateDialogComponent: Validate } = load('src/components/dia
 const Panel = load('src/components/IndividualValidationPanel.js').default;
 const History = load('src/components/ValidationAttemptHistory.js').default;
 const Filters = load('src/components/ValidationListFiltersPanel.js').default;
+const Head = load('src/components/HouseholdValidationHeadPanel.js').default;
 const { resolveActiveFilterSet, DEFAULT_VALIDATION_LIST_FILTERS_CONFIG: defaults } = load('src/util/validationFilters.js');
 const rights = [958001, 958002, 958003, 958004];
 const batchId = '11111111-1111-4111-8111-111111111111';
@@ -29,10 +30,14 @@ const nodeText = (node) => {
 const text = (view) => nodeText(view.toJSON());
 let requests;
 let downloads;
+const mounted = new Set();
+test.afterEach(() => { act(() => { mounted.forEach((view) => view.unmount()); mounted.clear(); }); });
 
 test.beforeEach(() => {
+  load.reset();
   requests = [];
   downloads = [];
+  global.__openBlob = (_bytes, fileName) => downloads.push(fileName);
   global.FileReader = class { readAsDataURL() { this.result = 'data:application/octet-stream;base64,V09SS0JPT0s='; this.onload(); } };
   global.document = {
     createElement: () => ({ click() { downloads.push(this.download); }, remove() {} }),
@@ -42,23 +47,27 @@ test.beforeEach(() => {
   URL.revokeObjectURL = () => {};
 });
 
-function serve(handler = () => ({})) {
+function serve(handler = () => ({}), batches = () => ({ count: 1, hasNextPage: false, items: [{ batchId, benefitPlanCode: 'CUSTOM', generatedAt: '2026-11-20', selectedIndividuals: 2 }] })) {
   global.fetch = async (url, options) => {
     const body = JSON.parse(options.body);
     requests.push({ url, ...body, signal: options.signal, headers: options.headers });
     if (body.query === api.PROGRAMMES_QUERY) return response({ validationProgrammes: [contract] });
+    if (body.query === api.INDIVIDUAL_BATCHES) return response({ individualValidationBatches: await batches(body.variables) });
     return response(await handler(body));
   };
 }
 async function mount(Component, props = {}) {
   let view;
-  await act(async () => { view = create(React.createElement(Component, { intl: {}, rights, ...props })); });
+  await act(async () => { view = create(React.createElement(load.Provider, { store: load.store }, React.createElement(Component, { intl: {}, rights, ...props }))); });
+  const update = view.update.bind(view);
+  view.update = (element) => update(React.createElement(load.Provider, { store: load.store }, element));
+  mounted.add(view);
   return view;
 }
 async function click(view, key) { await act(async () => { button(view, key).props.onClick(); }); }
 async function openAndSelect(view, name = 'validation.xlsx') {
   await act(async () => { view.root.findByType('SearcherActionButton').props.onClick(); });
-  await act(async () => { view.root.findByType('input').props.onChange({ target: { files: [{ name }] } }); });
+  await act(async () => { view.root.findByType('Input').props.onChange({ target: { files: [{ name }] } }); });
 }
 
 test('all operations parse as GraphQL; individual variables exclude household/date criteria', () => {
@@ -82,7 +91,7 @@ test('backend subjects enable individual filters without requiring a frontend pr
   const config = { ...defaults, programs: [{ code: 'PWP', filters: ['district'] }] };
   const individual = resolveActiveFilterSet(config, filters.program, contract);
   assert.equal(individual.programUnmatched, false);
-  assert.deepEqual(individual.filters, ['district', 'gvh', 'village', 'targetCount', 'excludeValidated']);
+  assert.deepEqual(individual.filters, ['district', 'ta', 'gvh', 'village', 'targetCount', 'excludeValidated']);
   assert.deepEqual(individual.requiredFilters, ['program', 'district']);
   assert.deepEqual(resolveActiveFilterSet(defaults).filters, defaults.filters);
   const household = resolveActiveFilterSet(config, { code: 'PWP' }, { subject: 'HOUSEHOLD' });
@@ -121,7 +130,7 @@ test('programme changes clear target, dates, geography and opt-in exclusion; ind
   let changed;
   const view = await mount(Filters, {
     classes: {}, modulesManager: { getConf: () => defaults }, contract, programmes: [contract],
-    filters: { ...filters, district: { code: 'CITY', uuid: 'city-id' }, excludeVerifiedAfter: '2026-01-01', excludeValidated: true, villages: [{ code: 'V' }] },
+    filters: { ...filters, tas: [{ code: 'CONST', uuid: 'const-id' }], district: { code: 'CITY', uuid: 'city-id' }, excludeVerifiedAfter: '2026-01-01', excludeValidated: true, villages: [{ code: 'V' }] },
     onChangeFilters: (value) => { changed = value; },
   });
   const published = view.root.findAllByType('PublishedComponent');
@@ -133,8 +142,8 @@ test('programme changes clear target, dates, geography and opt-in exclusion; ind
   assert.deepEqual(changed.villages, []);
   const options = [{ uuid: 'one' }, { uuid: 'two' }];
   assert.deepEqual(published.find((node) => node.props.pubRef === 'location.MwGVHPicker').props.filterOptions(options), options);
-  assert.deepEqual(published.find((node) => node.props.pubRef === 'location.MwGVHPicker').props.parentLocations, ['city-id']);
-  assert.equal(published.some((node) => node.props.pubRef === 'location.MwTAPicker'), false);
+  assert.deepEqual(published.find((node) => node.props.pubRef === 'location.MwGVHPicker').props.parentLocations, ['const-id']);
+  assert.equal(published.some((node) => node.props.pubRef === 'location.MwTAPicker'), true);
   assert.deepEqual(published.find((node) => node.props.pubRef === 'location.MwVillagePicker').props.filterOptions(options), options);
   act(() => view.unmount());
 });
@@ -191,7 +200,7 @@ test('history renders backend-configured fields and uses the selected attempt fo
   const view = await mount(History, { result: { batchId, uploadAttemptId: attemptId } });
   assert.ok(text(view).includes('Deployment field'));
   assert.ok(text(view).includes('Row data is not currently accessible.'));
-  await act(async () => { view.root.findAllByType('TextField').find((node) => node.props.select).props.onChange({ target: { value: secondAttempt } }); });
+  await act(async () => { view.root.findAllByType('TextField').find((node) => node.props.label === 'individualValidation.attempt').props.onChange({ target: { value: secondAttempt } }); });
   await click(view, 'downloadErrors');
   assert.equal(requests.filter((r) => r.query === api.INDIVIDUAL_ATTEMPT_ROWS).at(-1).variables.uploadAttemptId, secondAttempt);
   assert.deepEqual(downloads, [`${secondAttempt}.csv`]);
@@ -225,7 +234,7 @@ test('attempt history pages rows and resets paging on attempt changes without li
   assert.deepEqual(requests.find((r) => r.query === api.INDIVIDUAL_ERROR_REPORT).variables,
     { batchId, uploadAttemptId: attemptId });
   assert.deepEqual(downloads, ['all-errors.csv']);
-  await act(async () => { view.root.findAllByType('TextField').find((node) => node.props.select).props.onChange({ target: { value: secondAttempt } }); });
+  await act(async () => { view.root.findAllByType('TextField').find((node) => node.props.label === 'individualValidation.attempt').props.onChange({ target: { value: secondAttempt } }); });
   assert.deepEqual(requests.filter((r) => r.query === api.INDIVIDUAL_ATTEMPT_ROWS).at(-1).variables,
     { batchId, uploadAttemptId: secondAttempt, first: 20, offset: 0 });
   act(() => view.unmount());
@@ -272,17 +281,20 @@ test('programme/filter edits invalidate in-flight individual generation response
   await click(view, 'generate');
   const request = requests.at(-1);
   await act(async () => { view.update(React.createElement(Panel, { intl: {}, rights, filters: { ...filters, program: { code: 'OTHER' } }, canGenerate: true })); });
-  assert.equal(request.signal.aborted, true);
+  assert.equal(Object.keys(load.getState().householdValidation.individualRequests).length, 0);
   await act(async () => { resolve({ generateIndividualValidationList: { batchId, fileName: 'old.xlsx', fileBase64: 'b2xk' } }); });
   assert.equal(button(view, 'export'), undefined);
   act(() => view.unmount());
 });
 
-test('GraphQL and HTTP failures are surfaced without a successful result', async () => {
+test('GraphQL errors and HTTP 400 details are surfaced through the core request actions', async () => {
+  const { requestIndividualValidation } = load('src/actions.js');
   global.fetch = async () => ({ ok: true, json: async () => ({ errors: [{ message: 'Permission denied' }] }) });
-  await assert.rejects(api.validationRequest(api.PROGRAMMES_QUERY, {}), /Permission denied/);
-  global.fetch = async () => ({ ok: false, status: 403, statusText: 'Forbidden' });
-  await assert.rejects(api.validationRequest(api.PROGRAMMES_QUERY, {}), /403 Forbidden/);
+  await load.dispatch(requestIndividualValidation('errors', api.PROGRAMMES_QUERY, {}));
+  assert.match(load.getState().householdValidation.individualRequests.errors.error, /Permission denied/);
+  global.fetch = async () => ({ ok: false, status: 400, statusText: 'Bad Request', json: async () => ({ errors: [{ message: 'Invalid batch variable' }] }) });
+  await load.dispatch(requestIndividualValidation('errors', api.PROGRAMMES_QUERY, {}));
+  assert.match(load.getState().householdValidation.individualRequests.errors.error, /Invalid batch variable/);
 });
 
 test('invalid files never upload, and upload permission alone cannot expose reports or history', async () => {
@@ -295,7 +307,7 @@ test('invalid files never upload, and upload permission alone cannot expose repo
   assert.equal(!!button(view, 'dryRun').props.disabled, true);
   assert.ok(text(view).includes('invalidFile'));
   assert.equal(requests.some((request) => request.query === api.UPLOAD_INDIVIDUAL_LIST), false);
-  await act(async () => { view.root.findByType('input').props.onChange({ target: { files: [{ name: 'valid.xlsx' }] } }); });
+  await act(async () => { view.root.findByType('Input').props.onChange({ target: { files: [{ name: 'valid.xlsx' }] } }); });
   await click(view, 'commit');
   assert.equal(refreshed, false);
   assert.equal(button(view, 'downloadErrors'), undefined);
@@ -313,7 +325,7 @@ test('read-only/permission changes invalidate pending validation responses and p
   await click(view, 'commit');
   const pending = requests.at(-1);
   await act(async () => { view.update(React.createElement(Validate, { ...props, readOnly: true })); });
-  assert.equal(pending.signal.aborted, true);
+  assert.equal(Object.keys(load.getState().householdValidation.individualRequests).length, 0);
   await act(async () => { finish({ uploadIndividualValidationList: { batchId, uploadAttemptId: attemptId, rowsApplied: 1, dryRun: false } }); });
   assert.equal(refreshes, 0);
   assert.equal(view.toJSON(), null);
@@ -345,4 +357,149 @@ test('late household generation and preview responses cannot repopulate cleared 
     assert.equal(reducer(state, { type: `${type}_RESP`, meta: { requestId: 1 }, payload: { data: { generateHouseholdValidationList: { batchId: 'old' }, householdValidationPreview: { edges: [{ node: { groupUuid: 'old' } }] } } } }), state, field);
     assert.equal(reducer(state, { type: `${type}_ERR`, meta: { requestId: 1 }, payload: 'old failure' }), state);
   }
+});
+
+const headProps = () => ({
+  classes: {}, modulesManager: { getConf: () => defaults },
+  edited: { district: { code: 'CITY' }, microCatchment: { code: 'CATCHMENT' }, targetCount: 2 },
+  onEditedChanged() {}, generateValidationList() {}, clearValidationLists() {}, clearValidationPreview() {},
+});
+
+test('household generation stays available when programme discovery fails and shows backend details', async () => {
+  global.fetch = async () => ({ ok: false, status: 400, statusText: 'Bad Request', json: async () => ({ errors: [{ message: 'Programme discovery unavailable' }] }) });
+  let generated = 0;
+  const props = { ...headProps(), generateValidationList() { generated += 1; }, errorValidationLists: { message: 'Server returned data error status', detail: 'Backend selection explanation' } };
+  const view = await mount(Head, props);
+  const generate = view.root.findAllByType('Button').find((node) => node.props.children === 'generateValidationList.generateButton');
+  assert.equal(generate.props.disabled, false);
+  act(() => generate.props.onClick());
+  assert.equal(generated, 1);
+  assert.ok(text(view).includes('Backend selection explanation'));
+  assert.equal(text(view).includes('Server returned data error status'), false);
+  await act(async () => view.update(React.createElement(Head, { intl: {}, rights, ...props, edited: { ...props.edited, program: { code: 'UMEP', type: 'INDIVIDUAL' } } })));
+  assert.equal(button(view, 'generate').props.disabled, true);
+});
+
+test('programme failure is visible and can be retried instead of looking like empty configuration', async () => {
+  let failed = true;
+  global.fetch = async () => failed
+    ? { ok: false, status: 400, statusText: 'Bad Request', json: async () => ({ errors: [{ message: 'Programme service unavailable' }] }) }
+    : response({ validationProgrammes: [contract] });
+  const view = await mount(Validate, { downloadWithIconButton: true });
+  assert.ok(text(view).includes('programmeLoadFailed'));
+  assert.ok(text(view).includes('Programme service unavailable'));
+  failed = false;
+  await click(view, 'retryProgrammes');
+  assert.ok(view.root.findByType('SearcherActionButton'));
+  assert.equal(button(view, 'retryProgrammes'), undefined);
+});
+
+test('all individual geographic pickers inherit language-pack labels and direct-parent scopes', async () => {
+  const view = await mount(Filters, {
+    classes: {}, modulesManager: { getConf: () => ({ ...defaults, labels: { district: 'Wrong override' } }) },
+    contract, programmes: [contract],
+    filters: { ...filters, district: { code: 'CITY', uuid: 'city' }, tas: [{ uuid: 'constituency' }], gvhs: [{ uuid: 'ward' }] },
+    onChangeFilters() {},
+  });
+  const pickers = view.root.findAllByType('PublishedComponent');
+  const find = (ref) => pickers.find((node) => node.props.pubRef === `location.${ref}`).props;
+  for (const ref of ['LocationPicker', 'MwTAPicker', 'MwGVHPicker', 'MwVillagePicker']) assert.equal(find(ref).label, undefined);
+  assert.equal(find('MwTAPicker').parentLocation.uuid, 'city');
+  assert.deepEqual(find('MwGVHPicker').parentLocations, ['constituency']);
+  assert.deepEqual(find('MwVillagePicker').parentLocations, ['ward']);
+  assert.equal(find('MwGVHPicker').readOnly, false);
+});
+
+test('saved preview and export can finish independently', async () => {
+  let finishPreview;
+  serve(({ query }) => {
+    if (query === api.GENERATE_INDIVIDUAL_LIST) return { generateIndividualValidationList: { batchId, fileName: 'initial.xlsx', fileBase64: 'eA==' } };
+    if (query === api.SAVED_INDIVIDUAL_LIST) return new Promise((resolve) => { finishPreview = resolve; });
+    if (query === api.EXPORT_INDIVIDUAL_LIST) return { individualValidationListExport: { fileName: 'export.xlsx', fileBase64: 'eA==' } };
+    return {};
+  });
+  const view = await mount(Panel, { filters, canGenerate: true });
+  await click(view, 'generate');
+  await click(view, 'preview');
+  const exportButton = view.root.findByType('Dialog').findAllByType('Button').find((node) => node.props.children === 'individualValidation.export');
+  assert.equal(exportButton.props.disabled, false);
+  await act(async () => { exportButton.props.onClick(); });
+  assert.deepEqual(downloads, ['export.xlsx']);
+  await act(async () => finishPreview({ individualValidationList: { items: [{ first_name: 'Preview survives export' }], columns: [], displayFields: [] } }));
+  assert.ok(text(view).includes('Preview survives export'));
+});
+
+test('history page and attempt changes do not cancel the original error-report download', async () => {
+  let finishReport;
+  serve(({ query, variables }) => {
+    if (query === api.INDIVIDUAL_ATTEMPTS) return { individualValidationAttempts: { attempts: [{ upload_attempt_id: attemptId }, { upload_attempt_id: secondAttempt }] } };
+    if (query === api.INDIVIDUAL_ATTEMPT_ROWS) return { individualValidationAttemptRows: { count: 21, hasNextPage: variables.offset === 0, items: [{ id: `${variables.offset}`, row_number: variables.offset + 2, raw_row: {} }] } };
+    if (query === api.INDIVIDUAL_ERROR_REPORT) return new Promise((resolve) => { finishReport = resolve; });
+    return {};
+  });
+  const view = await mount(History, { result: { batchId, uploadAttemptId: attemptId } });
+  await click(view, 'downloadErrors');
+  await click(view, 'next');
+  await act(async () => view.root.findAllByType('TextField').find((node) => node.props.label === 'individualValidation.attempt').props.onChange({ target: { value: secondAttempt } }));
+  await act(async () => finishReport({ individualValidationErrorReport: { fileName: 'original-attempt.csv', fileBase64: 'eA==' } }));
+  assert.deepEqual(downloads, ['original-attempt.csv']);
+  assert.equal(requests.find((request) => request.query === api.INDIVIDUAL_ERROR_REPORT).variables.uploadAttemptId, attemptId);
+});
+
+test('choosing another workbook preserves selected history and its page', async () => {
+  serve(({ query, variables }) => {
+    if (query === api.UPLOAD_INDIVIDUAL_LIST) return { uploadIndividualValidationList: { batchId, uploadAttemptId: attemptId, dryRun: false, rowsApplied: 1, status: 'PROCESSED' } };
+    if (query === api.INDIVIDUAL_ATTEMPTS) return { individualValidationAttempts: { attempts: [{ upload_attempt_id: attemptId }] } };
+    if (query === api.INDIVIDUAL_ATTEMPT_ROWS) return { individualValidationAttemptRows: { count: 21, hasNextPage: variables.offset === 0, items: [{ id: 'saved-page', row_number: variables.offset + 2, raw_row: {} }] } };
+    return {};
+  });
+  const view = await mount(Validate, { downloadWithIconButton: true });
+  await openAndSelect(view);
+  await click(view, 'commit');
+  await click(view, 'next');
+  const count = requests.filter((request) => request.query === api.INDIVIDUAL_ATTEMPT_ROWS).length;
+  await act(async () => view.root.findByType('Input').props.onChange({ target: { files: [{ name: 'correction.xlsx' }] } }));
+  assert.equal(view.root.findAllByType('TextField').find((node) => node.props.label === 'individualValidation.batch').props.value, batchId);
+  assert.equal(view.root.findAllByType('TextField').find((node) => node.props.label === 'individualValidation.attempt').props.value, attemptId);
+  assert.equal(requests.filter((request) => request.query === api.INDIVIDUAL_ATTEMPT_ROWS).length, count);
+  assert.equal(button(view, 'previous').props.disabled, false);
+});
+
+test('history picks issued lists by descriptive summaries and loads older pages', async () => {
+  const oldBatch = '44444444-4444-4444-8444-444444444444';
+  serve(({ query }) => query === api.INDIVIDUAL_ATTEMPTS ? { individualValidationAttempts: { attempts: [] } } : {}, ({ offset }) => ({
+    count: 21, hasNextPage: offset === 0,
+    items: [{ batchId: offset ? oldBatch : batchId, benefitPlanCode: 'UMEP', generatedAt: offset ? '2026-10-01' : '2026-11-20', sourceFileName: offset ? 'old-list.xlsx' : 'recent-list.xlsx', selectedIndividuals: 20 }],
+  }));
+  const view = await mount(History);
+  const batchPicker = () => view.root.findAllByType('TextField').find((node) => node.props.label === 'individualValidation.batch');
+  assert.equal(batchPicker().props.select, true);
+  assert.ok(text(view).includes('recent-list.xlsx'));
+  await click(view, 'olderBatches');
+  assert.ok(text(view).includes('old-list.xlsx'));
+  await act(async () => batchPicker().props.onChange({ target: { value: oldBatch } }));
+  assert.equal(requests.filter((request) => request.query === api.INDIVIDUAL_ATTEMPTS).at(-1).variables.batchId, oldBatch);
+});
+
+test('core transport retains session handling and shared downloads receive decoded bytes', async () => {
+  const { requestIndividualValidation } = load('src/actions.js');
+  global.fetch = async () => ({ ok: false, status: 401, statusText: 'Unauthorized', json: async () => ({ errors: [{ message: 'Session expired' }] }) });
+  await load.dispatch(requestIndividualValidation('session', api.PROGRAMMES_QUERY, {}));
+  assert.ok(load.actions.some((action) => action.type === 'CORE_SESSION_EXPIRY_PROMPT'));
+  let opened;
+  global.__openBlob = (...args) => { opened = args; };
+  api.openValidationFile({ fileName: 'errors.csv', fileBase64: 'dGVzdA==' });
+  assert.equal(Buffer.from(opened[0]).toString(), 'test');
+  assert.equal(opened[1], 'errors.csv');
+  assert.equal(opened[2], 'csv');
+});
+
+test('late individual responses cannot overwrite newer requests or resurrect cleared instances', () => {
+  const { default: reducer, ACTION_TYPE } = load('src/reducer.js');
+  const type = ACTION_TYPE.INDIVIDUAL_VALIDATION;
+  let state = reducer(undefined, { type: `${type}_REQ`, meta: { requestKey: 'preview', requestId: 1 } });
+  state = reducer(state, { type: `${type}_REQ`, meta: { requestKey: 'preview', requestId: 2 } });
+  assert.equal(reducer(state, { type: `${type}_RESP`, meta: { requestKey: 'preview', requestId: 1 }, payload: { data: {} } }), state);
+  state = reducer(state, { type: `${type}_CLEAR`, meta: { requestKey: 'preview' } });
+  assert.equal(reducer(state, { type: `${type}_ERR`, meta: { requestKey: 'preview', requestId: 2 }, error: true, payload: { message: 'Old error' } }), state);
 });

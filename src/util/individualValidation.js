@@ -1,4 +1,4 @@
-import { apiHeaders, baseApiUrl } from '@openimis/fe-core';
+import { openBlob } from '@openimis/fe-core';
 import {
   RIGHT_HOUSEHOLD_VALIDATION_SEARCH, RIGHT_HOUSEHOLD_VALIDATION_UPLOAD,
   RIGHT_HOUSEHOLD_VALIDATION_HISTORY, RIGHT_HOUSEHOLD_VALIDATION_ERROR_REPORT,
@@ -16,22 +16,6 @@ export const validationPermissions = (rights = [], readOnly = false) => ({
   history: rights.includes(RIGHT_HOUSEHOLD_VALIDATION_HISTORY),
   errors: rights.includes(RIGHT_HOUSEHOLD_VALIDATION_ERROR_REPORT),
 });
-
-// Variables keep user-entered IDs, filenames and workbook content out of query text.
-export async function validationRequest(query, variables, signal) {
-  const response = await fetch(`${baseApiUrl}/graphql`, {
-    method: 'POST',
-    headers: { ...apiHeaders(), 'X-Requested-With': 'XMLHttpRequest' },
-    credentials: 'include',
-    body: JSON.stringify({ query, variables }),
-    signal,
-  });
-  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-  const payload = await response.json();
-  if (payload.errors?.length) throw new Error(payload.errors.map((error) => error.message).join('\n'));
-  if (!payload.data) throw new Error('No validation response received.');
-  return payload.data;
-}
 
 export const PROGRAMMES_QUERY = `query {
   validationProgrammes { benefitPlanCode subject dataSource columns decisionValues blankDecisionBehavior }
@@ -75,6 +59,12 @@ export const INDIVIDUAL_ATTEMPTS = `query ($batchId: UUID!) {
   individualValidationAttempts(batchId: $batchId) { count attempts }
 }`;
 
+export const INDIVIDUAL_BATCHES = `query ($first: Int!, $offset: Int!) {
+  individualValidationBatches(first: $first, offset: $offset) {
+    count hasNextPage items { batchId benefitPlanCode generatedAt uploadedAt sourceFileName status selectedIndividuals }
+  }
+}`;
+
 export const INDIVIDUAL_ATTEMPT_ROWS = `query ($batchId: UUID!, $uploadAttemptId: UUID!, $first: Int!, $offset: Int!) {
   individualValidationAttemptRows(batchId: $batchId, uploadAttemptId: $uploadAttemptId, first: $first, offset: $offset) {
     count items hasNextPage
@@ -107,17 +97,11 @@ export const readValidationFile = (file) => new Promise((resolve, reject) => {
   reader.readAsDataURL(file);
 });
 
-export function downloadValidationFile({ fileBase64, fileName }) {
+export function openValidationFile({ fileBase64, fileName }) {
   if (!fileBase64 || !fileName) throw new Error('No downloadable file received.');
   const bytes = Uint8Array.from(atob(fileBase64), (value) => value.charCodeAt(0));
-  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+  openBlob(bytes, fileName, fileName.toLowerCase().endsWith('.csv')
+    ? 'csv' : 'vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 }
 
 // Saved rows and attempts contain GenericScalar objects with snake_case keys.

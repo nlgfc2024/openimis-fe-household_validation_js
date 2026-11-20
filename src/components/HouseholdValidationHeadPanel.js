@@ -21,7 +21,7 @@ import HouseholdPreviewDialog from './dialogs/HouseholdPreviewDialog';
 import { HOUSEHOLD_VALIDATION_MODULE_NAME } from '../constants';
 import IndividualValidationPanel from './IndividualValidationPanel';
 import useValidationProgrammes from '../util/useValidationProgrammes';
-import { programmeFor, validationPermissions } from '../util/individualValidation';
+import { openValidationFile, programmeFor, validationPermissions } from '../util/individualValidation';
 import { hasRequiredGenerationFilters } from '../util/filters';
 import { getValidationListFiltersConfig, resolveActiveFilterSet } from '../util/validationFilters';
 import { generateValidationList, clearValidationLists, clearValidationPreview } from '../actions';
@@ -77,12 +77,14 @@ function HouseholdValidationHeadPanel({
   const permissions = validationPermissions(rights);
   const { programmes, loaded, error: programmeError } = useValidationProgrammes(permissions.query);
   const contract = programmeFor(programmes, edited?.program);
-  const individual = contract?.subject === 'INDIVIDUAL';
+  const individual = contract?.subject === 'INDIVIDUAL'
+    || (!contract && edited?.program?.type === 'INDIVIDUAL');
   const filtersConfig = getValidationListFiltersConfig(modulesManager);
   const { requiredFilters, programUnmatched } = resolveActiveFilterSet(filtersConfig, edited?.program, contract);
   const needsProgram = programmes.some((item) => item.subject === 'INDIVIDUAL');
-  const canGenerate = permissions.query && loaded && !programUnmatched
-    && (!edited?.program || !!contract) && (!needsProgram || !!edited?.program)
+  const programmeReady = loaded
+    ? ((!edited?.program || !!contract) && (!needsProgram || !!edited?.program)) : !individual;
+  const canGenerate = permissions.query && programmeReady && !programUnmatched
     && hasRequiredGenerationFilters(edited, requiredFilters);
 
   React.useEffect(() => {
@@ -105,23 +107,9 @@ function HouseholdValidationHeadPanel({
     generateValidationList(edited);
   };
 
-  const exportToCSV = () => {
-    const byteCharacters = atob(validationListResult.fileBase64);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'application/octet-stream' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = validationListResult?.fileName ?? 'validation_list.xlsx';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
+  const exportToCSV = () => openValidationFile({
+    ...validationListResult, fileName: validationListResult?.fileName ?? 'validation_list.xlsx',
+  });
 
   return (
     <Grid container>
@@ -311,7 +299,7 @@ function HouseholdValidationHeadPanel({
             onClose={() => setShowPreview(false)}
             filters={edited}
           />
-          {errorValidationLists && <Typography color="error" role="alert">{errorValidationLists.message ?? String(errorValidationLists)}</Typography>}
+          {errorValidationLists && <Typography color="error" role="alert">{errorValidationLists.detail || errorValidationLists.message || String(errorValidationLists)}</Typography>}
         </>
       )}
     </Grid>

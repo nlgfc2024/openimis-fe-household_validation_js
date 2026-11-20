@@ -2,6 +2,7 @@
 /* eslint-disable camelcase */
 import {
   graphql,
+  graphqlWithVariables,
   formatGQLString,
   formatPageQueryWithCount,
 } from '@openimis/fe-core';
@@ -16,6 +17,31 @@ import {
 } from './constants';
 
 let validationRequestSequence = 0;
+
+export const failIndividualValidation = (meta, error) => ({
+  type: ERROR(ACTION_TYPE.INDIVIDUAL_VALIDATION), meta, payload: { message: error.message }, error: true,
+});
+
+export const requestIndividualValidation = (requestKey, operation, variables) => async (dispatch) => {
+  const meta = { requestKey, requestId: ++validationRequestSequence };
+  const type = ACTION_TYPE.INDIVIDUAL_VALIDATION;
+  try {
+    return await dispatch(graphqlWithVariables(
+      operation,
+      variables,
+      [REQUEST(type), SUCCESS(type), ERROR(type)],
+      meta,
+    ));
+  } catch (error) {
+    const action = failIndividualValidation(meta, error);
+    dispatch(action);
+    return action;
+  }
+};
+
+export const clearIndividualValidation = (requestKey) => ({
+  type: CLEAR(ACTION_TYPE.INDIVIDUAL_VALIDATION), meta: { requestKey },
+});
 
 function buildGenerateValidationListFilters(filters) {
   const lines = [];

@@ -42,6 +42,7 @@ import {
   fetchRejectedHouseholds,
   uploadValidationList,
 } from '../../actions';
+import { openValidationFile } from '../../util/individualValidation';
 
 const RESULT_FIELDS = [
   'rowsRead',
@@ -167,23 +168,7 @@ const multipartApiHeaders = () => {
 const downloadRejectedHouseholds = (fileBase64, fileName) => {
   if (!fileBase64) return false;
   try {
-    const byteCharacters = atob(fileBase64);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let index = 0; index < byteCharacters.length; index += 1) {
-      byteNumbers[index] = byteCharacters.charCodeAt(index);
-    }
-    const blob = new Blob(
-      [new Uint8Array(byteNumbers)],
-      { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
-    );
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName ?? 'rejected_households.xlsx';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    openValidationFile({ fileBase64, fileName: fileName ?? 'rejected_households.xlsx' });
     return true;
   } catch {
     return false;

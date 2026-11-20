@@ -2,24 +2,27 @@ import React, { useEffect, useRef, useState } from 'react';
 import { injectIntl } from 'react-intl';
 import { connect } from 'react-redux';
 import {
-  Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, MenuItem, Typography,
+  Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl,
+  Grid, Input, MenuItem, Typography,
 } from '@material-ui/core';
 import FactCheckIcon from '@material-ui/icons/AssignmentTurnedIn';
 import { formatMessage, SearcherActionButton } from '@openimis/fe-core';
 import { HOUSEHOLD_VALIDATION_MODULE_NAME } from '../../constants';
 import {
-  INDIVIDUAL_ERROR_REPORT, UPLOAD_INDIVIDUAL_LIST, downloadValidationFile,
+  INDIVIDUAL_ERROR_REPORT, UPLOAD_INDIVIDUAL_LIST, openValidationFile,
   readValidationFile, validationPermissions,
 } from '../../util/individualValidation';
 import useValidationProgrammes from '../../util/useValidationProgrammes';
-import useValidationRequest from '../../util/useValidationRequest';
+import useIndividualValidationRequest from '../../util/useIndividualValidationRequest';
 import ValidationAttemptHistory from '../ValidationAttemptHistory';
 
 export function IndividualValidateDialogComponent({
   intl, rights, readOnly = false, refetch, renderTrigger, downloadWithIconButton,
 }) {
   const permissions = validationPermissions(rights, readOnly);
-  const { programmes, loaded } = useValidationProgrammes(permissions.query && permissions.upload);
+  const {
+    programmes, loaded, error: programmeError, retry,
+  } = useValidationProgrammes(permissions.query && permissions.upload);
   const contracts = programmes.filter((programme) => programme.subject === 'INDIVIDUAL');
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState(null);
@@ -27,8 +30,8 @@ export function IndividualValidateDialogComponent({
   const [fileError, setFileError] = useState(null);
   const [reading, setReading] = useState(false);
   const fileVersion = useRef(0);
-  const upload = useValidationRequest();
-  const report = useValidationRequest();
+  const upload = useIndividualValidationRequest();
+  const report = useIndividualValidationRequest();
   const fm = (key) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, `individualValidation.${key}`);
   const visible = loaded && contracts.length > 0 && permissions.query && permissions.upload;
 
@@ -45,6 +48,10 @@ export function IndividualValidateDialogComponent({
     }
   }, [visible, upload.reset, report.reset]);
 
+  useEffect(() => {
+    if (!permissions.errors) report.reset();
+  }, [permissions.errors, report.reset]);
+
   const close = () => {
     if (upload.loading || reading) return;
     fileVersion.current += 1;
@@ -58,7 +65,6 @@ export function IndividualValidateDialogComponent({
   const changeFile = (event) => {
     fileVersion.current += 1;
     upload.reset();
-    report.reset();
     setResult(null);
     const selected = event.target.files?.[0];
     setFile(selected?.name?.toLowerCase().endsWith('.xlsx') ? selected : null);
@@ -87,7 +93,15 @@ export function IndividualValidateDialogComponent({
     }
   };
 
-  if (!visible) return null;
+  if (!visible) {
+    if (!programmeError || !permissions.query || !permissions.upload) return null;
+    return (
+      <>
+        <Typography color="error" role="alert">{`${fm('programmeLoadFailed')}: ${programmeError}`}</Typography>
+        <Button onClick={retry}>{fm('retryProgrammes')}</Button>
+      </>
+    );
+  }
   const trigger = { onClick: () => setOpen(true), label: fm('validate') };
   const busy = reading || upload.loading;
   return (
@@ -106,8 +120,20 @@ export function IndividualValidateDialogComponent({
               {contract.blankDecisionBehavior === 'SKIP_ROW' && ` — ${fm('blankDecision')}`}
             </Typography>
           ))}
-          <label htmlFor="individual-validation-file">{fm('file')}</label>
-          <input id="individual-validation-file" aria-label={fm('file')} type="file" accept=".xlsx" disabled={busy} onChange={changeFile} />
+          <Grid container direction="column" spacing={2}>
+            <Grid item>
+              <Typography component="label" htmlFor="individual-validation-file">{fm('file')}</Typography>
+              <FormControl fullWidth>
+                <Input
+                  id="individual-validation-file"
+                  type="file"
+                  inputProps={{ accept: '.xlsx', 'aria-label': fm('file') }}
+                  disabled={busy}
+                  onChange={changeFile}
+                />
+              </FormControl>
+            </Grid>
+          </Grid>
           {fileError && <Typography color="error" role="alert">{fileError}</Typography>}
           {upload.error && <Typography color="error" role="alert">{upload.error}</Typography>}
           {busy && <Typography role="status">{fm('processing')}</Typography>}
@@ -118,7 +144,10 @@ export function IndividualValidateDialogComponent({
               {['batchId', 'uploadAttemptId', 'rowsRead', 'rowsApplied', 'rowsSkipped', 'errors',
                 'individualsVerified', 'individualsNotVerified', result.dryRun ? 'wouldUpdate' : 'individualsUpdated']
                 .filter((key) => result[key] != null).map((key) => (
-                  <Typography key={key}>{`${fm(key)}: ${result[key]}`}</Typography>
+                  <Grid container key={key} spacing={1}>
+                    <Grid item xs={6}><Typography>{fm(key)}</Typography></Grid>
+                    <Grid item xs={6}><Typography align="right">{result[key]}</Typography></Grid>
+                  </Grid>
                 ))}
               {result.errorMessages?.map((message, index) => (
                 // eslint-disable-next-line react/no-array-index-key
@@ -131,7 +160,7 @@ export function IndividualValidateDialogComponent({
                   onClick={() => report.run(
                     INDIVIDUAL_ERROR_REPORT,
                     { batchId: result.batchId, uploadAttemptId: result.uploadAttemptId },
-                    (data) => downloadValidationFile(data.individualValidationErrorReport),
+                    (data) => openValidationFile(data.individualValidationErrorReport),
                   )}
                 >
                   {fm('downloadErrors')}
@@ -143,7 +172,7 @@ export function IndividualValidateDialogComponent({
           {permissions.history && (
             <>
               <Divider />
-              <ValidationAttemptHistory key={`${fileVersion.current}:${result?.uploadAttemptId ?? ''}`} intl={intl} rights={rights} result={result?.dryRun ? null : result} />
+              <ValidationAttemptHistory intl={intl} rights={rights} result={result?.dryRun ? null : result} />
             </>
           )}
         </DialogContent>

@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
-import useValidationRequest from './useValidationRequest';
+import { useCallback, useEffect, useState } from 'react';
+import useIndividualValidationRequest from './useIndividualValidationRequest';
 import { PROGRAMMES_QUERY } from './individualValidation';
 
 export default function useValidationProgrammes(enabled) {
   const [programmes, setProgrammes] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [revision, setRevision] = useState(0);
+  const retry = useCallback(() => setRevision((value) => value + 1), []);
   const {
     run, reset, loading, error,
-  } = useValidationRequest();
+  } = useIndividualValidationRequest();
   useEffect(() => {
     setProgrammes([]);
     setLoaded(false);
@@ -18,8 +20,8 @@ export default function useValidationProgrammes(enabled) {
       });
     }
     return reset;
-  }, [enabled, run, reset]);
+  }, [enabled, revision, run, reset]);
   return {
-    programmes, loaded, loading, error,
+    programmes, loaded, loading, error, retry,
   };
 }

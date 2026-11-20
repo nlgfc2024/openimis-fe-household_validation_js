@@ -32,9 +32,8 @@ export const resolveActiveFilterSet = (config, program, contract) => {
     return {
       showProgramPicker: true,
       programUnmatched: false,
-      filters: [...new Set((matched?.filters ?? ['district', 'gvh', 'village', 'targetCount'])
+      filters: [...new Set((matched?.filters ?? ['district', 'ta', 'gvh', 'village', 'targetCount'])
         .filter((key) => key !== 'lastVerifiedDate').concat('excludeValidated'))],
-      labels: matched?.labels ?? {},
       requiredFilters: ['program', ...(matched?.requiredFilters ?? ['district'])
         .filter((key) => !['excludeVerifiedAfter', 'lastVerifiedDate'].includes(key))],
     };
@@ -47,7 +46,6 @@ export const resolveActiveFilterSet = (config, program, contract) => {
       showProgramPicker: true,
       programUnmatched,
       filters: matched?.filters ?? [],
-      labels: matched?.labels ?? {},
       requiredFilters: ['program', ...requiredFilters],
     };
   }
@@ -55,7 +53,6 @@ export const resolveActiveFilterSet = (config, program, contract) => {
     showProgramPicker: false,
     programUnmatched: false,
     filters: config?.filters ?? [],
-    labels: config?.labels ?? {},
     requiredFilters: config?.requiredFilters ?? [],
   };
 };

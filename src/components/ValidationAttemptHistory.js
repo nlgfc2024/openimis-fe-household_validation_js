@@ -5,10 +5,10 @@ import {
 import { formatMessage } from '@openimis/fe-core';
 import { HOUSEHOLD_VALIDATION_MODULE_NAME } from '../constants';
 import {
-  INDIVIDUAL_ATTEMPTS, INDIVIDUAL_ATTEMPT_ROWS, INDIVIDUAL_ERROR_REPORT,
-  downloadValidationFile, validationPermissions,
+  INDIVIDUAL_BATCHES, INDIVIDUAL_ATTEMPTS, INDIVIDUAL_ATTEMPT_ROWS, INDIVIDUAL_ERROR_REPORT,
+  openValidationFile, validationPermissions,
 } from '../util/individualValidation';
-import useValidationRequest from '../util/useValidationRequest';
+import useIndividualValidationRequest from '../util/useIndividualValidationRequest';
 import ValidationDataTable from './ValidationDataTable';
 
 const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -16,21 +16,25 @@ const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9
 export default function ValidationAttemptHistory({ intl, rights, result }) {
   const permissions = validationPermissions(rights);
   const [batchId, setBatchId] = useState(result?.batchId ?? '');
+  const [batches, setBatches] = useState([]);
+  const [batchOffset, setBatchOffset] = useState(0);
+  const [hasMoreBatches, setHasMoreBatches] = useState(false);
+  const [batchRevision, setBatchRevision] = useState(0);
+  const batchList = useIndividualValidationRequest();
   const [attempts, setAttempts] = useState([]);
   const [attemptId, setAttemptId] = useState('');
   const [items, setItems] = useState([]);
   const [offset, setOffset] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(false);
-  const history = useValidationRequest();
-  const rows = useValidationRequest();
-  const report = useValidationRequest();
+  const history = useIndividualValidationRequest();
+  const rows = useIndividualValidationRequest();
+  const report = useIndividualValidationRequest();
   const fm = (key) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, `individualValidation.${key}`);
 
   const clear = () => {
     history.reset();
     rows.reset();
-    report.reset();
     setAttempts([]);
     setAttemptId('');
     setItems([]);
@@ -52,6 +56,8 @@ export default function ValidationAttemptHistory({ intl, rights, result }) {
   useEffect(() => {
     if (result?.batchId && result?.uploadAttemptId) {
       setBatchId(result.batchId);
+      setBatchOffset(0);
+      setBatchRevision((value) => value + 1);
       loadHistory(result.batchId, result.uploadAttemptId);
     }
     // Load only when a committed attempt changes, not when the form rerenders.
@@ -59,10 +65,31 @@ export default function ValidationAttemptHistory({ intl, rights, result }) {
   }, [result?.batchId, result?.uploadAttemptId]);
 
   useEffect(() => {
+    if (!permissions.errors) report.reset();
+  }, [permissions.errors, report.reset]);
+
+  useEffect(() => {
+    if (!permissions.history) {
+      batchList.reset();
+      clear();
+      setBatches([]);
+      return undefined;
+    }
+    batchList.run(INDIVIDUAL_BATCHES, { first: 20, offset: batchOffset }, (data) => {
+      const page = data.individualValidationBatches;
+      setBatches((current) => {
+        const all = batchOffset === 0 ? page.items : [...current, ...page.items];
+        return [...new Map(all.map((batch) => [batch.batchId, batch])).values()];
+      });
+      setHasMoreBatches(!!page.hasNextPage);
+    });
+    return batchList.reset;
+  }, [permissions.history, batchOffset, batchRevision, batchList.run, batchList.reset]);
+
+  useEffect(() => {
     setItems([]);
     setTotalCount(0);
     setHasNextPage(false);
-    report.reset();
     if (attemptId && permissions.history) {
       rows.run(INDIVIDUAL_ATTEMPT_ROWS, {
         batchId, uploadAttemptId: attemptId, first: 20, offset,
@@ -74,7 +101,7 @@ export default function ValidationAttemptHistory({ intl, rights, result }) {
       });
     }
     return rows.reset;
-  }, [attemptId, batchId, offset, permissions.history, rows.run, rows.reset, report.reset]);
+  }, [attemptId, batchId, offset, permissions.history, rows.run, rows.reset]);
 
   if (!permissions.history) return null;
   const rawKeys = [...new Set(items.flatMap((item) => Object.keys(item.raw_row ?? {})))];
@@ -90,8 +117,27 @@ export default function ValidationAttemptHistory({ intl, rights, result }) {
   return (
     <div>
       <Typography variant="h6">{fm('history')}</Typography>
-      <TextField label={fm('batchId')} value={batchId} fullWidth onChange={(event) => { clear(); setBatchId(event.target.value.trim()); }} />
+      <TextField
+        select
+        label={fm('batch')}
+        value={batchId}
+        fullWidth
+        onChange={(event) => { setBatchId(event.target.value); loadHistory(event.target.value); }}
+      >
+        <MenuItem value="">{fm('chooseBatch')}</MenuItem>
+        {batchId && !batches.some((batch) => batch.batchId === batchId)
+          && <MenuItem value={batchId}>{fm('currentWorkbook')}</MenuItem>}
+        {batches.map((batch) => (
+          <MenuItem key={batch.batchId} value={batch.batchId}>
+            {`${batch.benefitPlanCode} — ${batch.generatedAt ?? ''} — ${batch.sourceFileName || fm('issuedList')} — ${batch.selectedIndividuals}`}
+          </MenuItem>
+        ))}
+      </TextField>
       <Button disabled={!isUuid(batchId) || history.loading} onClick={() => loadHistory(batchId)}>{fm('loadHistory')}</Button>
+      <Button disabled={batchList.loading} onClick={() => { setBatchOffset(0); setBatchRevision((value) => value + 1); }}>{fm('refreshBatches')}</Button>
+      {hasMoreBatches && <Button disabled={batchList.loading} onClick={() => setBatchOffset(batchOffset + 20)}>{fm('olderBatches')}</Button>}
+      {batchList.loading && <Typography role="status">{fm('processing')}</Typography>}
+      {batchList.error && <Typography color="error" role="alert">{batchList.error}</Typography>}
       {history.loading && <Typography role="status">{fm('processing')}</Typography>}
       {history.error && <Typography color="error" role="alert">{history.error}</Typography>}
       {attempts.length > 0 && (
@@ -119,7 +165,7 @@ export default function ValidationAttemptHistory({ intl, rights, result }) {
           onClick={() => report.run(
             INDIVIDUAL_ERROR_REPORT,
             { batchId, uploadAttemptId: attemptId },
-            (data) => downloadValidationFile(data.individualValidationErrorReport),
+            (data) => openValidationFile(data.individualValidationErrorReport),
           )}
         >
           {fm('downloadErrors')}

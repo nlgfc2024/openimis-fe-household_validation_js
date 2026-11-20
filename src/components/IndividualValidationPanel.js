@@ -5,10 +5,10 @@ import {
 import { formatMessage } from '@openimis/fe-core';
 import { HOUSEHOLD_VALIDATION_MODULE_NAME } from '../constants';
 import {
-  GENERATE_INDIVIDUAL_LIST, SAVED_INDIVIDUAL_LIST, EXPORT_INDIVIDUAL_LIST, downloadValidationFile,
+  GENERATE_INDIVIDUAL_LIST, SAVED_INDIVIDUAL_LIST, EXPORT_INDIVIDUAL_LIST, openValidationFile,
   individualSelectionVariables, savedSelectionColumns, validationPermissions,
 } from '../util/individualValidation';
-import useValidationRequest from '../util/useValidationRequest';
+import useIndividualValidationRequest from '../util/useIndividualValidationRequest';
 import ValidationDataTable from './ValidationDataTable';
 
 export default function IndividualValidationPanel({
@@ -18,19 +18,25 @@ export default function IndividualValidationPanel({
   const [preview, setPreview] = useState(null);
   const [open, setOpen] = useState(false);
   const [offset, setOffset] = useState(0);
-  const generation = useValidationRequest();
-  const selection = useValidationRequest();
+  const generation = useIndividualValidationRequest();
+  const selection = useIndividualValidationRequest();
+  const exportRequest = useIndividualValidationRequest();
   const permissions = validationPermissions(rights);
   const fm = (key) => formatMessage(intl, HOUSEHOLD_VALIDATION_MODULE_NAME, `individualValidation.${key}`);
 
   useEffect(() => {
     generation.reset();
     selection.reset();
+    exportRequest.reset();
     setResult(null);
     setPreview(null);
     setOpen(false);
     setOffset(0);
-  }, [filters, generation.reset, selection.reset]);
+  }, [filters, generation.reset, selection.reset, exportRequest.reset]);
+
+  useEffect(() => {
+    if (!permissions.query || !permissions.history) exportRequest.reset();
+  }, [permissions.query, permissions.history, exportRequest.reset]);
 
   useEffect(() => {
     setPreview(null);
@@ -65,7 +71,7 @@ export default function IndividualValidationPanel({
           <Button disabled={!permissions.query || !permissions.history} onClick={() => { setOffset(0); setOpen(true); }}>
             {fm('preview')}
           </Button>
-          <Button disabled={!permissions.query || !result.fileBase64} onClick={() => downloadValidationFile(result)}>
+          <Button disabled={!permissions.query || !result.fileBase64} onClick={() => openValidationFile(result)}>
             {fm('export')}
           </Button>
           {!permissions.history && <Typography>{fm('previewRequiresHistory')}</Typography>}
@@ -76,6 +82,7 @@ export default function IndividualValidationPanel({
         <DialogContent>
           {selection.loading && <Typography role="status">{fm('processing')}</Typography>}
           {selection.error && <Typography color="error" role="alert">{selection.error}</Typography>}
+          {exportRequest.error && <Typography color="error" role="alert">{exportRequest.error}</Typography>}
           {preview && (
             <>
               {['selectedIndividuals', 'availableIndividuals', 'deletedIndividuals', 'missingIndividuals', 'inaccessibleIndividuals'].map((key) => (
@@ -96,11 +103,11 @@ export default function IndividualValidationPanel({
         </DialogContent>
         <DialogActions>
           <Button
-            disabled={selection.loading || !result?.batchId}
-            onClick={() => selection.run(
+            disabled={exportRequest.loading || !result?.batchId}
+            onClick={() => exportRequest.run(
               EXPORT_INDIVIDUAL_LIST,
               { batchId: result.batchId },
-              (data) => downloadValidationFile(data.individualValidationListExport),
+              (data) => openValidationFile(data.individualValidationListExport),
             )}
           >
             {fm('export')}

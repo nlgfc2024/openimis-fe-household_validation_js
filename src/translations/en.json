@@ -144,10 +144,6 @@
   "individualValidation.status.PARTIAL_SUCCESS": "Partially processed: valid rows applied; correct the rows with errors and upload again.",
   "individualValidation.status.FAILED": "Validation failed: no valid rows could be applied.",
   "filter.totalIndividualsTarget": "Total Individuals Target",
-  "individualValidation.location.district": "City / District",
-  "individualValidation.location.ta": "Traditional Authority",
-  "individualValidation.location.gvh": "Ward / GVH",
-  "individualValidation.location.village": "Neighbourhood / Village",
   "individualValidation.field.batch_id": "Batch ID",
   "individualValidation.field.individual_uuid": "Individual ID",
   "individualValidation.field.first_name": "First name",
@@ -156,5 +152,13 @@
   "individualValidation.dryRunStatus.PROCESSED": "Dry run completed successfully.",
   "individualValidation.dryRunStatus.PARTIAL_SUCCESS": "Some rows are valid. Correct the rows with errors, or commit the workbook to apply only its valid rows.",
   "individualValidation.dryRunStatus.FAILED": "Dry run found no valid rows to apply.",
-  "individualValidation.attemptRowCount": "Attempt rows"
+  "individualValidation.attemptRowCount": "Attempt rows",
+  "individualValidation.programmeLoadFailed": "Validation programmes could not be loaded",
+  "individualValidation.retryProgrammes": "Retry validation programmes",
+  "individualValidation.batch": "Issued validation list",
+  "individualValidation.chooseBatch": "Select an issued validation list",
+  "individualValidation.currentWorkbook": "Current workbook",
+  "individualValidation.issuedList": "Issued list",
+  "individualValidation.refreshBatches": "Refresh issued lists",
+  "individualValidation.olderBatches": "Load older issued lists"
 }
