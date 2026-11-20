@@ -200,6 +200,37 @@ test('history renders backend-configured fields and uses the selected attempt fo
   act(() => view.unmount());
 });
 
+test('attempt history pages rows and resets paging on attempt changes without limiting error reports', async () => {
+  serve(({ query, variables }) => {
+    if (query === api.INDIVIDUAL_ATTEMPTS) return { individualValidationAttempts: { attempts: [
+      { upload_attempt_id: attemptId }, { upload_attempt_id: secondAttempt },
+    ] } };
+    if (query === api.INDIVIDUAL_ATTEMPT_ROWS) return { individualValidationAttemptRows: {
+      count: 21, hasNextPage: variables.offset === 0,
+      items: [{ id: `${variables.offset}`, row_number: variables.offset + 2, status: 'ERROR', raw_row: { 'Configured field': 'Invalid' } }],
+    } };
+    if (query === api.INDIVIDUAL_ERROR_REPORT) return { individualValidationErrorReport: { fileName: 'all-errors.csv', fileBase64: 'ZXJyb3Jz' } };
+    return {};
+  });
+  const view = await mount(History, { result: { batchId, uploadAttemptId: attemptId } });
+  assert.deepEqual(requests.filter((r) => r.query === api.INDIVIDUAL_ATTEMPT_ROWS).at(-1).variables,
+    { batchId, uploadAttemptId: attemptId, first: 20, offset: 0 });
+  assert.equal(button(view, 'previous').props.disabled, true);
+  assert.ok(text(view).includes('attemptRowCount: 21'));
+  await click(view, 'next');
+  assert.deepEqual(requests.filter((r) => r.query === api.INDIVIDUAL_ATTEMPT_ROWS).at(-1).variables,
+    { batchId, uploadAttemptId: attemptId, first: 20, offset: 20 });
+  assert.equal(button(view, 'next').props.disabled, true);
+  await click(view, 'downloadErrors');
+  assert.deepEqual(requests.find((r) => r.query === api.INDIVIDUAL_ERROR_REPORT).variables,
+    { batchId, uploadAttemptId: attemptId });
+  assert.deepEqual(downloads, ['all-errors.csv']);
+  await act(async () => { view.root.findAllByType('TextField').find((node) => node.props.select).props.onChange({ target: { value: secondAttempt } }); });
+  assert.deepEqual(requests.filter((r) => r.query === api.INDIVIDUAL_ATTEMPT_ROWS).at(-1).variables,
+    { batchId, uploadAttemptId: secondAttempt, first: 20, offset: 0 });
+  act(() => view.unmount());
+});
+
 test('individual preview uses saved batch and configured fields, with person counts and snapshot export', async () => {
   serve(({ query, variables }) => {
     if (query === api.GENERATE_INDIVIDUAL_LIST) return { generateIndividualValidationList: { batchId, eligibleIndividuals: 8, selectedIndividuals: 2, fileName: 'saved.xlsx', fileBase64: 'c2F2ZWQ=' } };

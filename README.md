@@ -39,6 +39,8 @@ The agreed backend decisions are VERIFIED and NOT_VERIFIED. Blank decisions skip
 
 Validation history is separate from ordinary individual import history. With history permission, enter a generated batch UUID to load previous validation attempts, or inspect the attempt returned by a commit. The selected batch/attempt pair is used for both result rows and CSV error downloads. Result columns come from backend `raw_row` data, including configured workbook columns. Access-redacted rows are displayed as returned by the backend. Dry-run errors are shown inline; a dry run has no persisted error report.
 
+Attempt results load 20 rows per page using `first`/`offset`, show the total row count and provide Previous/Next controls. Changing attempts or batches resets the page. Error downloads contain the entire selected attempt's error report, independently of the page being viewed.
+
 ### Permissions and backend dependencies
 
 | Backend right | Frontend behavior |

@@ -155,5 +155,6 @@
   "individualValidation.field.dob": "Date of birth",
   "individualValidation.dryRunStatus.PROCESSED": "Dry run completed successfully.",
   "individualValidation.dryRunStatus.PARTIAL_SUCCESS": "Some rows are valid. Correct the rows with errors, or commit the workbook to apply only its valid rows.",
-  "individualValidation.dryRunStatus.FAILED": "Dry run found no valid rows to apply."
+  "individualValidation.dryRunStatus.FAILED": "Dry run found no valid rows to apply.",
+  "individualValidation.attemptRowCount": "Attempt rows"
 }

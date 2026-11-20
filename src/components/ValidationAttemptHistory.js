@@ -19,6 +19,9 @@ export default function ValidationAttemptHistory({ intl, rights, result }) {
   const [attempts, setAttempts] = useState([]);
   const [attemptId, setAttemptId] = useState('');
   const [items, setItems] = useState([]);
+  const [offset, setOffset] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
   const history = useValidationRequest();
   const rows = useValidationRequest();
   const report = useValidationRequest();
@@ -31,6 +34,9 @@ export default function ValidationAttemptHistory({ intl, rights, result }) {
     setAttempts([]);
     setAttemptId('');
     setItems([]);
+    setOffset(0);
+    setTotalCount(0);
+    setHasNextPage(false);
   };
   const loadHistory = (id, preferredAttempt = '') => {
     clear();
@@ -54,14 +60,21 @@ export default function ValidationAttemptHistory({ intl, rights, result }) {
 
   useEffect(() => {
     setItems([]);
+    setTotalCount(0);
+    setHasNextPage(false);
     report.reset();
     if (attemptId && permissions.history) {
-      rows.run(INDIVIDUAL_ATTEMPT_ROWS, { batchId, uploadAttemptId: attemptId }, (data) => {
-        setItems(data.individualValidationAttemptRows?.items ?? []);
+      rows.run(INDIVIDUAL_ATTEMPT_ROWS, {
+        batchId, uploadAttemptId: attemptId, first: 20, offset,
+      }, (data) => {
+        const page = data.individualValidationAttemptRows;
+        setItems(page?.items ?? []);
+        setTotalCount(page?.count ?? 0);
+        setHasNextPage(!!page?.hasNextPage);
       });
     }
     return rows.reset;
-  }, [attemptId, batchId, permissions.history, rows.run, rows.reset, report.reset]);
+  }, [attemptId, batchId, offset, permissions.history, rows.run, rows.reset, report.reset]);
 
   if (!permissions.history) return null;
   const rawKeys = [...new Set(items.flatMap((item) => Object.keys(item.raw_row ?? {})))];
@@ -82,7 +95,7 @@ export default function ValidationAttemptHistory({ intl, rights, result }) {
       {history.loading && <Typography role="status">{fm('processing')}</Typography>}
       {history.error && <Typography color="error" role="alert">{history.error}</Typography>}
       {attempts.length > 0 && (
-        <TextField select fullWidth label={fm('attempt')} value={attemptId} onChange={(event) => setAttemptId(event.target.value)}>
+        <TextField select fullWidth label={fm('attempt')} value={attemptId} onChange={(event) => { setOffset(0); setAttemptId(event.target.value); }}>
           {attempts.map((attempt) => (
             <MenuItem key={attempt.upload_attempt_id} value={attempt.upload_attempt_id}>
               {`${attempt.uploaded_at} — ${attempt.source_file_name ?? ''} — ${attempt.status} — ${attempt.upload_attempt_id}`}
@@ -93,6 +106,13 @@ export default function ValidationAttemptHistory({ intl, rights, result }) {
       {rows.loading && <Typography role="status">{fm('processing')}</Typography>}
       {rows.error && <Typography color="error" role="alert">{rows.error}</Typography>}
       {!!attemptId && !rows.loading && <ValidationDataTable columns={columns} rows={tableRows} />}
+      {!!attemptId && (
+        <>
+          <Typography>{`${fm('attemptRowCount')}: ${totalCount}`}</Typography>
+          <Button disabled={rows.loading || offset === 0} onClick={() => setOffset(Math.max(0, offset - 20))}>{fm('previous')}</Button>
+          <Button disabled={rows.loading || !hasNextPage} onClick={() => setOffset(offset + 20)}>{fm('next')}</Button>
+        </>
+      )}
       {permissions.errors && !!attemptId && (
         <Button
           disabled={report.loading}

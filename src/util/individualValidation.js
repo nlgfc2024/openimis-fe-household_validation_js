@@ -75,8 +75,10 @@ export const INDIVIDUAL_ATTEMPTS = `query ($batchId: UUID!) {
   individualValidationAttempts(batchId: $batchId) { count attempts }
 }`;
 
-export const INDIVIDUAL_ATTEMPT_ROWS = `query ($batchId: UUID!, $uploadAttemptId: UUID!) {
-  individualValidationAttemptRows(batchId: $batchId, uploadAttemptId: $uploadAttemptId) { count items }
+export const INDIVIDUAL_ATTEMPT_ROWS = `query ($batchId: UUID!, $uploadAttemptId: UUID!, $first: Int!, $offset: Int!) {
+  individualValidationAttemptRows(batchId: $batchId, uploadAttemptId: $uploadAttemptId, first: $first, offset: $offset) {
+    count items hasNextPage
+  }
 }`;
 
 export const INDIVIDUAL_ERROR_REPORT = `query ($batchId: UUID!, $uploadAttemptId: UUID!) {
