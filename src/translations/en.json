@@ -15,7 +15,7 @@
   "generateValidationList.selectedYouthHeaded": "Youth-Headed Households Selected",
   "generateValidationList.selectedReserve": "Reserve Households Selected",
   "generateValidationList.missingRequiredFiltersTitle": "Missing required filters",
-  "generateValidationList.missingRequiredFilters": "Complete the required filters for the selected programme to generate a validation list.",
+  "generateValidationList.missingRequiredFilters": "Complete these required filters to generate a validation list: {filters}.",
   "generateValidationList.unmatchedProgramFiltersTitle": "Program not configured",
   "generateValidationList.unmatchedProgramFilters": "This Program has no configured filters. Contact your administrator to configure it before generating a validation list.",
   "generateValidationList.previewHouseholdsButton": "Preview Households",

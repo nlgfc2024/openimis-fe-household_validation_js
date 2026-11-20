@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const React = require('react');
+const { createIntl } = require('react-intl');
 const { act, create } = require('react-test-renderer');
 const { parse } = require('graphql');
 const createLoader = require('./load-module.cjs');
@@ -363,6 +364,65 @@ const headProps = () => ({
   classes: {}, modulesManager: { getConf: () => defaults },
   edited: { district: { code: 'CITY' }, microCatchment: { code: 'CATCHMENT' }, targetCount: 2 },
   onEditedChanged() {}, generateValidationList() {}, clearValidationLists() {}, clearValidationPreview() {},
+});
+
+const hintIntl = () => createIntl({
+  locale: 'en',
+  messages: {
+    ...Object.fromEntries(Object.entries(require('../src/translations/en.json')).map(([key, value]) => [`householdValidation.${key}`, value])),
+    'location.Location0Picker.label': 'City',
+    'location.Location1Picker.label': 'Constituency',
+    'location.Location2Picker.label': 'Ward',
+    'location.Location3Picker.label': 'Neighbourhood',
+  },
+});
+const touchHeadFilters = (view) => act(() => {
+  const panel = view.root.findByType(Filters);
+  panel.props.onChangeFilters(panel.props.filters);
+});
+const missingHint = (view) => view.root.findAllByType('WarningBox').find((node) => node.props.title === 'Missing required filters')?.props.description;
+
+test('household hint names only missing default required filters and clears when complete', async () => {
+  global.fetch = async () => ({ ok: false, status: 400, json: async () => ({ errors: [{ message: 'Unavailable' }] }) });
+  const props = { ...headProps(), intl: hintIntl(), edited: {} };
+  const view = await mount(Head, props);
+  touchHeadFilters(view);
+  assert.equal(missingHint(view), 'Complete these required filters to generate a validation list: District, Micro Catchment, Total Households Target.');
+  const updated = { ...props, edited: { district: { code: 'CITY' } } };
+  await act(async () => view.update(React.createElement(Head, { ...updated, rights })));
+  assert.equal(missingHint(view), 'Complete these required filters to generate a validation list: Micro Catchment, Total Households Target.');
+  await act(async () => view.update(React.createElement(Head, { ...props, rights, edited: headProps().edited })));
+  assert.equal(missingHint(view), undefined);
+});
+
+test('programme hints use configured required filters, UMEP language labels and selected multi-value state', async () => {
+  global.fetch = async () => response({ validationProgrammes: [contract, { benefitPlanCode: 'PWP', subject: 'HOUSEHOLD' }] });
+  const props = {
+    ...headProps(), intl: hintIntl(), edited: { program: { code: 'CUSTOM' } },
+    modulesManager: { getConf: () => ({ programs: [
+      { code: 'CUSTOM', filters: ['district', 'ta', 'gvh', 'village', 'targetCount'], requiredFilters: ['district', 'ta', 'gvh', 'village', 'targetCount'] },
+      { code: 'PWP', filters: ['district', 'microCatchment', 'targetCount'], requiredFilters: ['microCatchment'] },
+    ] }) },
+  };
+  const view = await mount(Head, props);
+  touchHeadFilters(view);
+  assert.equal(missingHint(view), 'Complete these required filters to generate a validation list: City, Constituency, Ward, Neighbourhood, Total Individuals Target.');
+  const edited = { ...props.edited, district: { uuid: 'city' }, tas: [{ uuid: 'constituency' }], gvhs: [{ uuid: 'ward' }], villages: [{ uuid: 'neighbourhood' }], targetCount: 0 };
+  await act(async () => view.update(React.createElement(Head, { ...props, rights, edited })));
+  assert.equal(missingHint(view), 'Complete these required filters to generate a validation list: Total Individuals Target.');
+  await act(async () => view.update(React.createElement(Head, { ...props, rights, edited: { ...edited, targetCount: 2 } })));
+  assert.equal(missingHint(view), undefined);
+  await act(async () => view.update(React.createElement(Head, { ...props, rights, edited: { program: { code: 'PWP' } } })));
+  assert.equal(missingHint(view), 'Complete these required filters to generate a validation list: Micro Catchment.');
+});
+
+test('required-filter checks share alias, date and positive-target semantics with the hint', () => {
+  const { missingRequiredGenerationFilters, hasRequiredGenerationFilters } = load('src/util/filters.js');
+  const required = ['ta', 'gvh', 'village', 'lastVerifiedDate', 'targetCount', 'ta'];
+  const values = { tas: [{ uuid: 'ta' }], gvhs: [{ uuid: 'ward' }], villages: [{ uuid: 'village' }], excludeVerifiedAfter: '2026-11-20', targetCount: '2' };
+  assert.equal(hasRequiredGenerationFilters(values, required), true);
+  assert.deepEqual(missingRequiredGenerationFilters({ ...values, tas: [], targetCount: -1 }, required), ['ta', 'targetCount']);
+  assert.deepEqual(missingRequiredGenerationFilters({}, []), []);
 });
 
 test('household generation stays available when programme discovery fails and shows backend details', async () => {

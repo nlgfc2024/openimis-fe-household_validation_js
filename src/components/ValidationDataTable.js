@@ -2,11 +2,20 @@ import React from 'react';
 import {
   Table, TableBody, TableCell, TableHead, TableRow,
 } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 import { displayValue } from '../util/individualValidation';
 
+const useStyles = makeStyles({
+  container: {
+    overflowX: 'auto',
+    maxHeight: '50vh',
+  },
+});
+
 export default function ValidationDataTable({ columns, rows = [] }) {
+  const classes = useStyles();
   return (
-    <div style={{ overflowX: 'auto', maxHeight: 400 }}>
+    <div className={classes.container}>
       <Table size="small" stickyHeader>
         <TableHead>
           <TableRow>

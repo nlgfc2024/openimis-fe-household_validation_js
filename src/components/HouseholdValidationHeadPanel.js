@@ -12,6 +12,7 @@ import { withTheme, withStyles } from '@material-ui/core/styles';
 import {
   withModulesManager,
   formatMessage,
+  formatMessageWithValues,
   WarningBox,
 } from '@openimis/fe-core';
 import { connect } from 'react-redux';
@@ -22,7 +23,7 @@ import { HOUSEHOLD_VALIDATION_MODULE_NAME } from '../constants';
 import IndividualValidationPanel from './IndividualValidationPanel';
 import useValidationProgrammes from '../util/useValidationProgrammes';
 import { openValidationFile, programmeFor, validationPermissions } from '../util/individualValidation';
-import { hasRequiredGenerationFilters } from '../util/filters';
+import { missingRequiredGenerationFilters } from '../util/filters';
 import { getValidationListFiltersConfig, resolveActiveFilterSet } from '../util/validationFilters';
 import { generateValidationList, clearValidationLists, clearValidationPreview } from '../actions';
 
@@ -53,6 +54,10 @@ const styles = (theme) => ({
   },
 });
 
+const LOCATION_LEVELS = {
+  district: 0, ta: 1, gvh: 2, village: 3,
+};
+
 function HouseholdValidationHeadPanel({
   intl,
   classes,
@@ -82,10 +87,21 @@ function HouseholdValidationHeadPanel({
   const filtersConfig = getValidationListFiltersConfig(modulesManager);
   const { requiredFilters, programUnmatched } = resolveActiveFilterSet(filtersConfig, edited?.program, contract);
   const needsProgram = programmes.some((item) => item.subject === 'INDIVIDUAL');
+  const missingFilters = missingRequiredGenerationFilters(edited, [
+    ...requiredFilters, ...(needsProgram ? ['program'] : []),
+  ]);
+  const filterLabel = (field) => {
+    if (individual && field in LOCATION_LEVELS) {
+      return formatMessage(intl, 'location', `Location${LOCATION_LEVELS[field]}Picker.label`);
+    }
+    const label = field === 'targetCount'
+      ? `total${individual ? 'Individuals' : 'Households'}Target` : field;
+    return fm(`filter.${label === 'excludeVerifiedAfter' ? 'lastVerifiedDate' : label}`);
+  };
   const programmeReady = loaded
     ? ((!edited?.program || !!contract) && (!needsProgram || !!edited?.program)) : !individual;
   const canGenerate = permissions.query && programmeReady && !programUnmatched
-    && hasRequiredGenerationFilters(edited, requiredFilters);
+    && missingFilters.length === 0;
 
   React.useEffect(() => {
     clearValidationLists();
@@ -123,14 +139,19 @@ function HouseholdValidationHeadPanel({
           contract={contract}
           programmes={programmes}
         />
-        {filtersTouched && !canGenerate && (
+        {filtersTouched && (programUnmatched || missingFilters.length > 0) && (
           <WarningBox
             title={fm(programUnmatched
               ? 'generateValidationList.unmatchedProgramFiltersTitle'
               : 'generateValidationList.missingRequiredFiltersTitle')}
-            description={fm(programUnmatched
-              ? 'generateValidationList.unmatchedProgramFilters'
-              : 'generateValidationList.missingRequiredFilters')}
+            description={programUnmatched
+              ? fm('generateValidationList.unmatchedProgramFilters')
+              : formatMessageWithValues(
+                intl,
+                HOUSEHOLD_VALIDATION_MODULE_NAME,
+                'generateValidationList.missingRequiredFilters',
+                { filters: missingFilters.map(filterLabel).join(', ') },
+              )}
           />
         )}
       </Grid>

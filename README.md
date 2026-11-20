@@ -122,6 +122,8 @@ All of these filters are shown; only District, Micro Catchment, and Total Househ
 
 Filters render in the order listed in `filters`, and each one is read-only until the filter immediately before it in that order has a value (a purely positional dependency — there's no hardcoded parent/child relationship baked into the component). `requiredFilters` controls which of the currently active filters must be filled in before the Generate button enables; it's independent of `filters`, so a field can be shown but optional.
 
+After filters are edited, the missing-filters hint lists only unfilled entries from the active programme's `requiredFilters`. It uses the inputs' translated labels (including the location language pack for individual geography) and the household or individual target label. Language-pack overrides of `householdValidation.generateValidationList.missingRequiredFilters` should retain the `{filters}` placeholder.
+
 ### Program-based config (e.g. Jobs Now)
 
 Setting a `programs` array switches the panel into program-based mode: a Program (Benefit Plan) picker appears first, and the active `filters`/`requiredFilters` are looked up from whichever entry in `programs` matches the selected Program's `code` (case-insensitive, exact match — the same `code` value `actions.js` sends the backend as `benefitPlanCode`, so make sure `programs[].code` matches the corresponding `openimis-be-household_validation` `program_eligibility_rules` key). `program` is always added to `requiredFilters` automatically in this mode, so a Program must be selected before Generate enables — no need to list it explicitly.

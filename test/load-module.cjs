@@ -13,7 +13,10 @@ module.exports = function createLoader(extraMocks = {}) {
   const core = {
     apiHeaders: () => ({ 'Content-Type': 'application/json', 'X-CSRFToken': 'test-csrf' }),
     baseApiUrl: '/api',
-    formatMessage: (_intl, _module, key) => key,
+    formatMessage: (intl, module, key) => intl?.formatMessage
+      ? intl.formatMessage({ id: intl.messages?.[`${module}.${key}`] ? `${module}.${key}` : key }) : key,
+    formatMessageWithValues: (intl, module, key, values) => intl?.formatMessage
+      ? intl.formatMessage({ id: intl.messages?.[`${module}.${key}`] ? `${module}.${key}` : key }, values) : key,
     formatGraphQLError: (payload) => payload.errors ? { message: 'Server returned data error status', detail: payload.errors.map((error) => error.message).join('; ') } : null,
     formatServerError: (payload) => ({ message: payload.statusText || payload.message, detail: payload.response?.errors?.map((error) => error.message).join('; ') }),
     graphqlWithVariables: (query, variables, types, meta) => async (dispatch) => {
@@ -56,7 +59,7 @@ module.exports = function createLoader(extraMocks = {}) {
       if (name === 'react-intl') return { injectIntl: (component) => component };
       if (name === 'react-redux') return { ...reactRedux, connect: () => (component) => component };
       if (name === 'redux') return { bindActionCreators: (actions) => actions };
-      if (name === '@material-ui/core/styles') return { withStyles: () => (Component) => (props) => React.createElement(Component, { classes: {}, ...props }), withTheme: (component) => component };
+      if (name === '@material-ui/core/styles') return { makeStyles: () => () => ({ container: 'table-container' }), withStyles: () => (Component) => (props) => React.createElement(Component, { classes: {}, ...props }), withTheme: (component) => component };
       if (name === '@material-ui/core') return new Proxy({}, { get: (_obj, key) => (
         key === 'Dialog' ? Dialog : key
       ) });
