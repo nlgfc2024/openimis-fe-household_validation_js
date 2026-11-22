@@ -414,6 +414,8 @@ function UploadValidatedListDialog({
     'householdsNotVerified',
     'householdsWithMultiplePrimaryWorkers',
   ].some((field) => resultCount(field) > 0);
+  const hasPrimaryWorkerNationalIdError = (validationUploadResult?.errorMessages || [])
+    .some((message) => message.includes('valid national_id for the selected primary worker'));
   const issueMetrics = [
     ['participantsNotVerified', 'uploadValidationList.participantsNotVerified'],
     ['participantsRejected', 'uploadValidationList.participantsRejected'],
@@ -560,6 +562,11 @@ function UploadValidatedListDialog({
                         <Typography variant="body2">
                           {fm('uploadValidationList.partial.message')}
                         </Typography>
+                        {hasPrimaryWorkerNationalIdError && (
+                          <Typography variant="body2">
+                            {fm('uploadValidationList.primaryWorkerNationalIdRequired')}
+                          </Typography>
+                        )}
                         <div className={classes.issueMetrics}>
                           {issueMetrics.map(([field, label]) => (
                             <Typography key={field} className={classes.issueMetric} component="span">

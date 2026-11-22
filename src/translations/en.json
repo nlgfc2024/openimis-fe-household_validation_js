@@ -50,6 +50,7 @@
   "uploadValidationList.success.message": "All households were verified successfully. You can now proceed with enrolment.",
   "uploadValidationList.partial.title": "Some households could not be verified",
   "uploadValidationList.partial.message": "Some uploaded records could not be verified. Download the error report to see which rows failed, correct them, and upload the list again.",
+  "uploadValidationList.primaryWorkerNationalIdRequired": "A selected primary worker must have a valid national ID. Fill in the national_id cell for that row, then upload the corrected list.",
   "uploadValidationList.rowsRead": "Total Number of Participants",
   "uploadValidationList.householdsVerified": "Households Verified",
   "uploadValidationList.participantsVerified": "Participants Verified",
