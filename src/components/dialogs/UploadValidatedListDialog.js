@@ -35,6 +35,7 @@ import {
   RIGHT_INDIVIDUAL_CREATE,
   KYC_DETAILS_WORKFLOW_NAME,
   KYC_DETAILS_WORKFLOW_GROUP,
+  PRIMARY_WORKER_NATIONAL_ID_REQUIRED,
 } from '../../constants';
 import {
   clearRejectedHouseholds,
@@ -414,8 +415,8 @@ function UploadValidatedListDialog({
     'householdsNotVerified',
     'householdsWithMultiplePrimaryWorkers',
   ].some((field) => resultCount(field) > 0);
-  const hasPrimaryWorkerNationalIdError = (validationUploadResult?.errorMessages || [])
-    .some((message) => message.includes('valid national_id for the selected primary worker'));
+  const hasPrimaryWorkerNationalIdError = (validationUploadResult?.errorCodes || [])
+    .includes(PRIMARY_WORKER_NATIONAL_ID_REQUIRED);
   const issueMetrics = [
     ['participantsNotVerified', 'uploadValidationList.participantsNotVerified'],
     ['participantsRejected', 'uploadValidationList.participantsRejected'],
