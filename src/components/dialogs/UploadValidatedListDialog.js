@@ -35,6 +35,7 @@ import {
   RIGHT_INDIVIDUAL_CREATE,
   KYC_DETAILS_WORKFLOW_NAME,
   KYC_DETAILS_WORKFLOW_GROUP,
+  PRIMARY_WORKER_NATIONAL_ID_REQUIRED,
 } from '../../constants';
 import {
   clearRejectedHouseholds,
@@ -414,6 +415,8 @@ function UploadValidatedListDialog({
     'householdsNotVerified',
     'householdsWithMultiplePrimaryWorkers',
   ].some((field) => resultCount(field) > 0);
+  const hasPrimaryWorkerNationalIdError = (validationUploadResult?.errorCodes || [])
+    .includes(PRIMARY_WORKER_NATIONAL_ID_REQUIRED);
   const issueMetrics = [
     ['participantsNotVerified', 'uploadValidationList.participantsNotVerified'],
     ['participantsRejected', 'uploadValidationList.participantsRejected'],
@@ -560,6 +563,11 @@ function UploadValidatedListDialog({
                         <Typography variant="body2">
                           {fm('uploadValidationList.partial.message')}
                         </Typography>
+                        {hasPrimaryWorkerNationalIdError && (
+                          <Typography variant="body2">
+                            {fm('uploadValidationList.primaryWorkerNationalIdRequired')}
+                          </Typography>
+                        )}
                         <div className={classes.issueMetrics}>
                           {issueMetrics.map(([field, label]) => (
                             <Typography key={field} className={classes.issueMetric} component="span">

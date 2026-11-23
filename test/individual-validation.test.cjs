@@ -13,6 +13,7 @@ const Panel = load('src/components/IndividualValidationPanel.js').default;
 const History = load('src/components/ValidationAttemptHistory.js').default;
 const Filters = load('src/components/ValidationListFiltersPanel.js').default;
 const Head = load('src/components/HouseholdValidationHeadPanel.js').default;
+const householdConstants = load('src/constants.js');
 const { resolveActiveFilterSet, DEFAULT_VALIDATION_LIST_FILTERS_CONFIG: defaults } = load('src/util/validationFilters.js');
 const rights = [958001, 958002, 958003, 958004];
 const batchId = '11111111-1111-4111-8111-111111111111';
@@ -86,6 +87,14 @@ test('all operations parse as GraphQL; individual variables exclude household/da
   assert.equal('excludeVerifiedAfter' in variables, false);
   assert.equal(api.programmeFor([contract], { code: 'custom' }), contract);
   assert.equal(api.programmeFor([contract], { code: 'UMEP' }), undefined);
+});
+
+test('household upload requests stable error codes for primary-worker guidance', () => {
+  assert.ok(householdConstants.UPLOAD_VALIDATION_LIST_RESULT_PROJECTION.includes('errorCodes'));
+  assert.equal(
+    householdConstants.PRIMARY_WORKER_NATIONAL_ID_REQUIRED,
+    'PRIMARY_WORKER_NATIONAL_ID_REQUIRED',
+  );
 });
 
 test('backend subjects enable individual filters without requiring a frontend programme entry', () => {

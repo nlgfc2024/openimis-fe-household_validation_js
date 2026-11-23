@@ -14,6 +14,7 @@ export const RIGHT_HOUSEHOLD_VALIDATION_ERROR_REPORT = 958004;
 export const RIGHT_INDIVIDUAL_CREATE = 159002;
 export const KYC_DETAILS_WORKFLOW_NAME = 'Python KYC Details';
 export const KYC_DETAILS_WORKFLOW_GROUP = 'individual';
+export const PRIMARY_WORKER_NATIONAL_ID_REQUIRED = 'PRIMARY_WORKER_NATIONAL_ID_REQUIRED';
 
 // Search / Pagination
 export const DEFAULT_PAGE_SIZE = 10;
@@ -83,4 +84,5 @@ export const UPLOAD_VALIDATION_LIST_RESULT_PROJECTION = [
   'participantUpdates',
   'errors',
   'errorMessages',
+  'errorCodes',
 ];
